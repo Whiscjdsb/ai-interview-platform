@@ -22,6 +22,11 @@ const router = createRouter({
       meta: { guestOnly: true }
     },
     {
+      path: '/share/:token',
+      name: 'share-interview',
+      component: () => import('@/views/share/ShareInterviewView.vue')
+    },
+    {
       path: '/',
       component: () => import('@/layouts/AppLayout.vue'),
       meta: { requiresAuth: true },
@@ -80,6 +85,12 @@ const router = createRouter({
           meta: { title: 'AI 面试助手' }
         },
         {
+          path: 'enterprise-interview',
+          name: 'enterprise-interview',
+          component: () => import('@/views/ai-interview/EnterpriseInterviewView.vue'),
+          meta: { title: '企业级模拟面试' }
+        },
+        {
           path: 'ai-interview/session/:id',
           name: 'ai-interview-session',
           component: () => import('@/views/ai-interview/AIInterviewSessionView.vue'),
@@ -102,6 +113,12 @@ const router = createRouter({
           name: 'ai-interview-history-detail',
           component: () => import('@/views/ai-interview/AIInterviewDetailView.vue'),
           meta: { title: 'AI 面试详情' }
+        },
+        {
+          path: 'user/growth',
+          name: 'user-growth',
+          component: () => import('@/views/user/UserGrowthView.vue'),
+          meta: { title: '能力成长' }
         },
         {
           path: 'profile',

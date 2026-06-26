@@ -18,6 +18,7 @@ import com.example.aiinterview.module.ai.dto.AiReviewAnswerRequest;
 import com.example.aiinterview.module.ai.dto.GenerateInterviewRequest;
 import com.example.aiinterview.module.ai.entity.AiReviewRecord;
 import com.example.aiinterview.module.ai.enums.AiRecordType;
+import com.example.aiinterview.module.ai.enums.EnterpriseInterviewerType;
 import com.example.aiinterview.module.ai.mapper.AiReviewRecordMapper;
 import com.example.aiinterview.module.ai.service.AiAssistantService;
 import com.example.aiinterview.module.ai.service.AiService;
@@ -71,7 +72,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         List<TagVO> tags = loadTags(List.of(question.getId())).getOrDefault(question.getId(), List.of());
         AiService aiService = aiServiceFactory.current();
         AiAnswerReviewVO result = aiService.reviewAnswer(question, tags, request.getAnswer());
-        result.setScore(Math.max(0, Math.min(100, result.getScore())));
+        result.setScore(result.getScore() == null ? 0 : Math.max(0, Math.min(100, result.getScore())));
         result.setModelName(aiService.modelName());
 
         saveRecord(userId, question.getId(), AiRecordType.ANSWER_REVIEW, request, result, BigDecimal.valueOf(result.getScore()), result.getModelName());
@@ -87,6 +88,9 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         result.setQuestionCount(result.getQuestions() == null ? 0 : result.getQuestions().size());
         result.setFocusAreas(request.getFocusTags());
         result.setStatus("IN_PROGRESS");
+        result.setInterviewerType(EnterpriseInterviewerType.defaultIfNull(request.getInterviewerType()));
+        result.setPositionModel(request.getPositionModel());
+        result.setPressureMode(Boolean.TRUE.equals(request.getPressureMode()));
         AiReviewRecord record = saveRecord(userId, null, AiRecordType.MOCK_INTERVIEW, request, result, null, result.getModelName());
         result.setId(record.getId());
         updateRecordResult(record, result, null);
@@ -236,6 +240,9 @@ public class AiAssistantServiceImpl implements AiAssistantService {
             record.setReviewResult(resultJson);
             record.setScore(score);
             record.setModelName(modelName);
+            if (input instanceof GenerateInterviewRequest interviewRequest) {
+                record.setInterviewerType(EnterpriseInterviewerType.defaultIfNull(interviewRequest.getInterviewerType()));
+            }
             aiReviewRecordMapper.insert(record);
             adminStatisticsCacheService.evictAll();
             return record;

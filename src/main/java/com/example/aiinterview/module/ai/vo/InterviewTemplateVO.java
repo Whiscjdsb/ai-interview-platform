@@ -2,6 +2,7 @@ package com.example.aiinterview.module.ai.vo;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import com.example.aiinterview.module.ai.enums.EnterpriseInterviewerType;
 import com.example.aiinterview.module.question.enums.QuestionDifficulty;
@@ -10,11 +11,13 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class AiInterviewDetailVO {
+public class InterviewTemplateVO {
 
     private final Long id;
 
-    private final String position;
+    private final String positionModel;
+
+    private final EnterpriseInterviewerType companyType;
 
     private final QuestionDifficulty difficulty;
 
@@ -22,17 +25,7 @@ public class AiInterviewDetailVO {
 
     private final List<String> focusAreas;
 
-    private final String status;
-
-    private final List<AiInterviewQuestionVO> questions;
-
-    private final String modelName;
+    private final Map<String, Integer> scoringWeights;
 
     private final LocalDateTime createTime;
-
-    private final EnterpriseInterviewerType interviewerType;
-
-    private final String positionModel;
-
-    private final Boolean pressureMode;
 }

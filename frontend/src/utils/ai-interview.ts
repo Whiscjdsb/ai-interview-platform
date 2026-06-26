@@ -200,3 +200,26 @@ export function answersToPayload(questions: InterviewQuestion[], answers: Record
     answer: answers[question.questionNo] || ''
   }))
 }
+
+export const radarIndicators = [
+  { name: 'Java基础', max: 100 },
+  { name: 'Spring Boot', max: 100 },
+  { name: '数据库', max: 100 },
+  { name: '系统设计', max: 100 },
+  { name: '项目经验', max: 100 }
+]
+
+export function buildRadarScores(score: number) {
+  const base = Math.max(0, Math.min(100, Math.round(score || 0)))
+  return [
+    clampRadarScore(base + 2),
+    clampRadarScore(base - 3),
+    clampRadarScore(base),
+    clampRadarScore(base - 7),
+    clampRadarScore(base - 5)
+  ]
+}
+
+function clampRadarScore(score: number) {
+  return Math.max(0, Math.min(100, score))
+}

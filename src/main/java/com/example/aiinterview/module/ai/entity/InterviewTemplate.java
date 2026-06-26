@@ -1,50 +1,37 @@
 package com.example.aiinterview.module.ai.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.example.aiinterview.module.ai.enums.AiRecordType;
 import com.example.aiinterview.module.ai.enums.EnterpriseInterviewerType;
+import com.example.aiinterview.module.question.enums.QuestionDifficulty;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@TableName("ai_review_record")
-public class AiReviewRecord {
+@TableName("interview_template")
+public class InterviewTemplate {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
     private Long userId;
 
-    private Long questionId;
+    private String positionModel;
 
-    private Long answerRecordId;
+    private EnterpriseInterviewerType companyType;
 
-    private AiRecordType recordType;
+    private QuestionDifficulty difficulty;
 
-    private String inputContent;
+    private Integer questionCount;
 
-    private String resultContent;
+    private String focusAreas;
 
-    private BigDecimal score;
-
-    private String modelName;
-
-    private EnterpriseInterviewerType interviewerType;
-
-    private String prompt;
-
-    private String reviewResult;
-
-    private String shareToken;
-
-    private Boolean isPublic;
+    private String scoringWeights;
 
     private LocalDateTime createTime;
 

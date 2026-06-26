@@ -31,6 +31,14 @@
           <el-icon><ChatDotRound /></el-icon>
           <span>AI 面试助手</span>
         </el-menu-item>
+        <el-menu-item index="/enterprise-interview">
+          <el-icon><OfficeBuilding /></el-icon>
+          <span>企业模拟面试</span>
+        </el-menu-item>
+        <el-menu-item index="/user/growth">
+          <el-icon><TrendCharts /></el-icon>
+          <span>能力成长</span>
+        </el-menu-item>
         <el-menu-item index="/profile">
           <el-icon><User /></el-icon>
           <span>个人中心（开发中）</span>
@@ -74,10 +82,12 @@ import {
   ChatDotRound,
   Clock,
   HomeFilled,
+  OfficeBuilding,
   Reading,
   Setting,
   StarFilled,
   SwitchButton,
+  TrendCharts,
   User,
   WarningFilled
 } from '@element-plus/icons-vue'
@@ -97,6 +107,9 @@ const activePath = computed(() => {
   }
   if (route.path.startsWith('/ai-interview')) {
     return '/ai-interview'
+  }
+  if (route.path.startsWith('/user/growth')) {
+    return '/user/growth'
   }
   if (route.path.startsWith('/admin/questions/')) {
     return '/admin/questions'

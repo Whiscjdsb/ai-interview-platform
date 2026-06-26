@@ -1,11 +1,18 @@
 import { request } from '@/api/http'
 import type {
+  AiUserGrowth,
   CreateInterviewPayload,
+  EnterpriseFitAnalysis,
   Interview,
   InterviewHistory,
   InterviewHistoryDetail,
   InterviewHistoryQuery,
+  InterviewFollowUpPayload,
+  InterviewFollowUpResponse,
   InterviewResult,
+  InterviewShareLink,
+  InterviewTemplate,
+  InterviewTemplatePayload,
   SubmitInterviewPayload
 } from '@/types/ai-interview'
 import type { PageResult } from '@/types/question'
@@ -20,6 +27,9 @@ interface GenerateInterviewResponse {
   questions: Interview['questions']
   modelName: string
   createTime?: string
+  interviewerType?: Interview['interviewerType']
+  positionModel?: string
+  pressureMode?: boolean
 }
 
 interface InterviewDetailResponse {
@@ -40,6 +50,9 @@ interface InterviewDetailResponse {
   }>
   modelName: string
   createTime: string
+  interviewerType?: Interview['interviewerType']
+  positionModel?: string
+  pressureMode?: boolean
 }
 
 export async function createInterview(payload: CreateInterviewPayload) {
@@ -51,7 +64,10 @@ export async function createInterview(payload: CreateInterviewPayload) {
     questions: data.questions,
     modelName: data.modelName,
     status: data.status || 'CREATED',
-    createTime: data.createTime || new Date().toISOString()
+    createTime: data.createTime || new Date().toISOString(),
+    interviewerType: data.interviewerType || payload.interviewerType,
+    positionModel: data.positionModel || payload.positionModel,
+    pressureMode: data.pressureMode ?? payload.pressureMode
   } satisfies Interview
 }
 
@@ -71,12 +87,52 @@ export async function getInterview(id: number | string) {
     })),
     modelName: data.modelName,
     status: data.status,
-    createTime: data.createTime
+    createTime: data.createTime,
+    interviewerType: data.interviewerType,
+    positionModel: data.positionModel,
+    pressureMode: data.pressureMode
   } satisfies Interview
 }
 
 export function submitInterview(id: number | string, payload: SubmitInterviewPayload) {
   return request.post<InterviewResult>(`/api/ai/interviews/${id}/submit`, payload)
+}
+
+export function downloadInterviewPdf(id: number | string) {
+  return request.get<Blob>(`/api/ai/interview/${id}/export-pdf`, {
+    responseType: 'blob'
+  })
+}
+
+export function createInterviewShareLink(id: number | string) {
+  return request.post<InterviewShareLink>(`/api/ai/interview/${id}/share`)
+}
+
+export function getSharedInterview(token: string) {
+  return request.get<InterviewResult>(`/api/share/${token}`)
+}
+
+export function getUserGrowth() {
+  return request.get<AiUserGrowth>('/api/ai/user/growth')
+}
+
+export function getNextInterviewQuestion(payload: InterviewFollowUpPayload) {
+  return request.post<InterviewFollowUpResponse>('/api/ai/interview/next-question', payload)
+}
+
+export function createInterviewTemplate(payload: InterviewTemplatePayload) {
+  return request.post<InterviewTemplate>('/api/ai/interview/template/create', payload)
+}
+
+export function getInterviewTemplates() {
+  return request.get<InterviewTemplate[]>('/api/ai/interview/template/list')
+}
+
+export function getEnterpriseFitAnalysis(params: {
+  positionModel?: string
+  companyType?: Interview['interviewerType']
+}) {
+  return request.get<EnterpriseFitAnalysis>('/api/ai/interview/fit-analysis', { params })
 }
 
 export function getInterviewHistory(params: InterviewHistoryQuery) {

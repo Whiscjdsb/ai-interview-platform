@@ -3,10 +3,15 @@ package com.example.aiinterview.module.ai.controller;
 import com.example.aiinterview.common.PageResult;
 import com.example.aiinterview.common.Result;
 import com.example.aiinterview.module.ai.dto.AiHistoryQueryRequest;
+import com.example.aiinterview.module.ai.dto.AiInterviewFollowUpRequest;
 import com.example.aiinterview.module.ai.dto.AiReviewAnswerRequest;
 import com.example.aiinterview.module.ai.dto.GenerateInterviewRequest;
 import com.example.aiinterview.module.ai.service.AiAssistantService;
+import com.example.aiinterview.module.ai.service.AiInterviewService;
+import com.example.aiinterview.module.ai.service.AiUserGrowthService;
 import com.example.aiinterview.module.ai.vo.AiAnswerReviewVO;
+import com.example.aiinterview.module.ai.vo.AiInterviewFollowUpVO;
+import com.example.aiinterview.module.ai.vo.AiUserGrowthVO;
 import com.example.aiinterview.module.ai.vo.AiHistoryDetailVO;
 import com.example.aiinterview.module.ai.vo.AiHistoryItemVO;
 import com.example.aiinterview.module.ai.vo.GenerateInterviewVO;
@@ -33,6 +38,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AiAssistantController {
 
     private final AiAssistantService aiAssistantService;
+    private final AiInterviewService aiInterviewService;
+    private final AiUserGrowthService aiUserGrowthService;
 
     @PostMapping("/review-answer")
     public Result<AiAnswerReviewVO> reviewAnswer(
@@ -51,6 +58,18 @@ public class AiAssistantController {
     @PostMapping("/weakness-summary")
     public Result<WeaknessSummaryVO> summarizeWeakness(@AuthenticationPrincipal UserPrincipal principal) {
         return Result.success(aiAssistantService.summarizeWeakness(principal.getId()));
+    }
+
+    @PostMapping("/interview/next-question")
+    public Result<AiInterviewFollowUpVO> nextQuestion(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody AiInterviewFollowUpRequest request) {
+        return Result.success(aiInterviewService.nextQuestion(request));
+    }
+
+    @GetMapping("/user/growth")
+    public Result<AiUserGrowthVO> getUserGrowth(@AuthenticationPrincipal UserPrincipal principal) {
+        return Result.success(aiUserGrowthService.getUserGrowth(principal.getId()));
     }
 
     @GetMapping("/history")

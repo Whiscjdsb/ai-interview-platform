@@ -5,11 +5,11 @@ spring:
   application:
     name: ai-interview-platform-backend
 
-    datasource:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/ai_interview_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
-      username: ${DB_USERNAME:root}
-      password: ${DB_PASSWORD:123456}
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/ai_interview_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -38,11 +38,12 @@ app:
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
   ai:
     provider: ${AI_PROVIDER:mock}
-    api-key: ${AI_API_KEY:}
     deepseek:
       api-key: ${DEEPSEEK_API_KEY:}
-    openai:
-      api-key: ${OPENAI_API_KEY:}
+
+ai:
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY:}
 
 openapi:
   title: AI Interview Platform Backend API

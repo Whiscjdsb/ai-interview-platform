@@ -171,9 +171,12 @@ CREATE TABLE IF NOT EXISTS ai_review_record (
   input_content TEXT DEFAULT NULL COMMENT 'User input or generation parameters as JSON',
   result_content TEXT DEFAULT NULL COMMENT 'AI result as JSON',
   model_name VARCHAR(128) DEFAULT NULL COMMENT 'AI model name',
+  interviewer_type VARCHAR(32) NOT NULL DEFAULT 'STARTUP' COMMENT 'Enterprise interviewer type: ALIBABA, TENCENT, BYTEDANCE, STARTUP',
   prompt TEXT DEFAULT NULL COMMENT 'Prompt sent to AI provider',
   review_result TEXT DEFAULT NULL COMMENT 'Legacy AI review result',
   score DECIMAL(5,2) DEFAULT NULL COMMENT 'AI generated score',
+  share_token VARCHAR(128) DEFAULT NULL COMMENT 'Public share token',
+  is_public TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Public share flag: 0 private, 1 public',
   create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
   update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last update time',
   deleted TINYINT NOT NULL DEFAULT 0 COMMENT 'Logical delete flag: 0 active, 1 deleted',
@@ -183,8 +186,45 @@ CREATE TABLE IF NOT EXISTS ai_review_record (
   KEY idx_ai_review_record_question_id (question_id),
   KEY idx_ai_review_record_answer_record_id (answer_record_id),
   KEY idx_ai_review_record_create_time (create_time),
+  KEY idx_ai_review_record_interviewer_type (interviewer_type),
+  UNIQUE KEY uk_ai_review_record_share_token (share_token),
+  KEY idx_ai_review_record_is_public (is_public),
   KEY idx_ai_review_record_deleted (deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI review record table';
+
+CREATE TABLE IF NOT EXISTS interview_template (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Interview template primary key',
+  user_id BIGINT NOT NULL COMMENT 'Template owner user id',
+  position_model VARCHAR(128) NOT NULL COMMENT 'Target position model',
+  company_type VARCHAR(32) NOT NULL DEFAULT 'STARTUP' COMMENT 'Company interviewer style',
+  difficulty VARCHAR(32) NOT NULL COMMENT 'Interview difficulty',
+  question_count INT NOT NULL DEFAULT 5 COMMENT 'Question count',
+  focus_areas TEXT DEFAULT NULL COMMENT 'Focus areas as JSON array',
+  scoring_weights TEXT DEFAULT NULL COMMENT 'Scoring weights as JSON object',
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
+  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last update time',
+  deleted TINYINT NOT NULL DEFAULT 0 COMMENT 'Logical delete flag: 0 active, 1 deleted',
+  PRIMARY KEY (id),
+  KEY idx_interview_template_user_time (user_id, create_time),
+  KEY idx_interview_template_company_difficulty (company_type, difficulty),
+  KEY idx_interview_template_deleted (deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Enterprise interview template table';
+
+CREATE TABLE IF NOT EXISTS ai_interview_session (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'AI interview session primary key',
+  user_id BIGINT NOT NULL COMMENT 'User id',
+  review_record_id BIGINT DEFAULT NULL COMMENT 'Related ai_review_record id',
+  interviewer_type VARCHAR(32) NOT NULL DEFAULT 'STARTUP' COMMENT 'Enterprise interviewer type',
+  status VARCHAR(32) NOT NULL DEFAULT 'IN_PROGRESS' COMMENT 'Session status',
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
+  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last update time',
+  deleted TINYINT NOT NULL DEFAULT 0 COMMENT 'Logical delete flag: 0 active, 1 deleted',
+  PRIMARY KEY (id),
+  KEY idx_ai_interview_session_user_status (user_id, status),
+  KEY idx_ai_interview_session_record (review_record_id),
+  KEY idx_ai_interview_session_interviewer_type (interviewer_type),
+  KEY idx_ai_interview_session_deleted (deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI interview session extension table';
 
 CREATE TABLE IF NOT EXISTS daily_learning_record (
   id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Daily learning record primary key',

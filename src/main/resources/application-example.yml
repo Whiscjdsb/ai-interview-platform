@@ -38,16 +38,21 @@ app:
     # Token lifetime in seconds.
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
   ai:
-    # Supported values for now: mock. Reserved extension values: deepseek, openai.
+    # Supported values: mock, deepseek. Reserved extension value: openai.
     provider: ${AI_PROVIDER:mock}
     # Generic AI key placeholder. Do not commit real keys.
     api-key: ${AI_API_KEY:}
     deepseek:
-      # Future DeepSeek integration reads the key from this environment variable.
+      # DeepSeek integration reads the key from this environment variable.
       api-key: ${DEEPSEEK_API_KEY:}
     openai:
       # Future OpenAI integration reads the key from this environment variable.
       api-key: ${OPENAI_API_KEY:}
+
+ai:
+  deepseek:
+    # Alias used by DeepSeekAiService. Do not commit real keys.
+    api-key: ${DEEPSEEK_API_KEY:}
 
 openapi:
   title: AI Interview Platform Backend API

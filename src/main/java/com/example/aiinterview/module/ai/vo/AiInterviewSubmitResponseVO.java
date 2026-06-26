@@ -3,6 +3,7 @@ package com.example.aiinterview.module.ai.vo;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.aiinterview.module.ai.enums.EnterpriseInterviewerType;
 import com.example.aiinterview.module.question.enums.QuestionDifficulty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -40,4 +41,8 @@ public class AiInterviewSubmitResponseVO {
     private String modelName;
 
     private LocalDateTime createTime;
+
+    private EnterpriseInterviewerType interviewerType;
+
+    private EnterpriseScoreVO enterpriseScore;
 }

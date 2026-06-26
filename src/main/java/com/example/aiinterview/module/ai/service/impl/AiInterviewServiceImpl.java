@@ -15,15 +15,22 @@ import com.example.aiinterview.common.BusinessException;
 import com.example.aiinterview.common.ErrorCode;
 import com.example.aiinterview.module.admin.service.AdminStatisticsCacheService;
 import com.example.aiinterview.module.ai.dto.AiInterviewAnswerSubmitRequest;
+import com.example.aiinterview.module.ai.dto.AiInterviewConversationMessageDTO;
+import com.example.aiinterview.module.ai.dto.AiInterviewFollowUpRequest;
 import com.example.aiinterview.module.ai.dto.AiInterviewSubmitRequest;
 import com.example.aiinterview.module.ai.dto.GenerateInterviewRequest;
 import com.example.aiinterview.module.ai.entity.AiReviewRecord;
 import com.example.aiinterview.module.ai.enums.AiRecordType;
+import com.example.aiinterview.module.ai.enums.EnterpriseInterviewerType;
 import com.example.aiinterview.module.ai.mapper.AiReviewRecordMapper;
+import com.example.aiinterview.module.ai.service.AiService;
+import com.example.aiinterview.module.ai.service.AiServiceFactory;
 import com.example.aiinterview.module.ai.vo.AiInterviewDetailVO;
+import com.example.aiinterview.module.ai.vo.AiInterviewFollowUpVO;
 import com.example.aiinterview.module.ai.vo.AiInterviewQuestionResultVO;
 import com.example.aiinterview.module.ai.vo.AiInterviewQuestionVO;
 import com.example.aiinterview.module.ai.vo.AiInterviewSubmitResponseVO;
+import com.example.aiinterview.module.ai.vo.EnterpriseScoreVO;
 import com.example.aiinterview.module.ai.vo.GenerateInterviewVO;
 import com.example.aiinterview.module.ai.vo.MockInterviewQuestionVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +46,7 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
     private final AiReviewRecordMapper aiReviewRecordMapper;
     private final ObjectMapper objectMapper;
     private final AdminStatisticsCacheService adminStatisticsCacheService;
+    private final AiServiceFactory aiServiceFactory;
 
     @Override
     public AiInterviewDetailVO getInterview(Long userId, Long id) {
@@ -63,7 +71,10 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
                                 null))
                         .toList(),
                 snapshot.modelName(),
-                record.getCreateTime());
+                record.getCreateTime(),
+                EnterpriseInterviewerType.defaultIfNull(input.getInterviewerType()),
+                input.getPositionModel(),
+                Boolean.TRUE.equals(input.getPressureMode()));
     }
 
     @Override
@@ -110,19 +121,41 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
                 buildSuggestions(snapshot, questionResults),
                 questionResults,
                 snapshot.modelName(),
-                LocalDateTime.now());
+                LocalDateTime.now(),
+                EnterpriseInterviewerType.defaultIfNull(record.getInterviewerType()),
+                buildEnterpriseScore(totalScore, questionResults));
 
         try {
             String resultJson = objectMapper.writeValueAsString(result);
             record.setResultContent(resultJson);
             record.setReviewResult(resultJson);
             record.setScore(BigDecimal.valueOf(totalScore));
+            record.setInterviewerType(result.getInterviewerType());
             aiReviewRecordMapper.updateById(record);
             adminStatisticsCacheService.evictAll();
             return result;
         } catch (Exception ex) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "Failed to save interview result");
         }
+    }
+
+    @Override
+    public AiInterviewFollowUpVO nextQuestion(AiInterviewFollowUpRequest request) {
+        AiService aiService = aiServiceFactory.current();
+        String prompt = buildFollowUpPrompt(request);
+        if (aiService instanceof DeepSeekAiService deepSeekAiService) {
+            String rawResponse = deepSeekAiService.chat(prompt);
+            AiInterviewFollowUpVO parsed = parseFollowUpResponse(rawResponse);
+            if (StringUtils.hasText(parsed.getNextQuestion())) {
+                return parsed;
+            }
+            return new AiInterviewFollowUpVO(
+                    buildLocalFollowUpQuestion(request),
+                    "DeepSeek response was not valid JSON, so a safe follow-up question was generated locally.");
+        }
+        return new AiInterviewFollowUpVO(
+                buildLocalFollowUpQuestion(request),
+                "Mock provider generated a progressive follow-up question based on the answer and conversation history.");
     }
 
     private AiReviewRecord getInterviewRecordOrThrow(Long userId, Long id) {
@@ -135,6 +168,109 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
             throw new BusinessException(ErrorCode.NOT_FOUND, "AI interview does not exist");
         }
         return record;
+    }
+
+    private String buildFollowUpPrompt(AiInterviewFollowUpRequest request) {
+        EnterpriseInterviewerType interviewerType = EnterpriseInterviewerType.defaultIfNull(request.getInterviewerType());
+        return """
+                Role:
+                You are a strict Java interviewer and follow-up interviewer.
+                Enterprise interviewer style:
+                %s - %s
+
+                Original question:
+                %s
+
+                Candidate answer:
+                %s
+
+                Conversation history:
+                %s
+
+                Rules:
+                1. Ask exactly one follow-up question.
+                2. The follow-up question must be based on the candidate answer and conversation history.
+                3. The question must gradually go deeper than previous questions.
+                4. Do not repeat any question from history.
+                5. Do not output multiple questions.
+                6. Return only one valid JSON object. Do not use Markdown, code fences, or extra text.
+
+                JSON format:
+                {
+                  "nextQuestion": "one follow-up question",
+                  "reason": "why this follow-up is useful"
+                }
+                """.formatted(
+                interviewerType.name(),
+                interviewerType.getSystemPrompt(),
+                request.getQuestion(),
+                request.getAnswer(),
+                formatHistory(request.getHistory()));
+    }
+
+    private String formatHistory(List<AiInterviewConversationMessageDTO> history) {
+        if (history == null || history.isEmpty()) {
+            return "No previous follow-up conversation.";
+        }
+        return history.stream()
+                .map(item -> item.getRole() + ": " + item.getContent())
+                .collect(Collectors.joining("\n"));
+    }
+
+    private AiInterviewFollowUpVO parseFollowUpResponse(String rawResponse) {
+        try {
+            if (!StringUtils.hasText(rawResponse)) {
+                return new AiInterviewFollowUpVO("", "");
+            }
+            String content = objectMapper.readTree(rawResponse)
+                    .path("choices")
+                    .path(0)
+                    .path("message")
+                    .path("content")
+                    .asText();
+            if (!StringUtils.hasText(content)) {
+                return new AiInterviewFollowUpVO("", "");
+            }
+            String json = extractJsonObject(content);
+            AiInterviewFollowUpVO result = objectMapper.readValue(json, AiInterviewFollowUpVO.class);
+            if (!StringUtils.hasText(result.getNextQuestion())) {
+                return new AiInterviewFollowUpVO("", "");
+            }
+            if (!StringUtils.hasText(result.getReason())) {
+                result.setReason("DeepSeek generated a progressive follow-up question.");
+            }
+            return result;
+        } catch (Exception ex) {
+            return new AiInterviewFollowUpVO("", "");
+        }
+    }
+
+    private String extractJsonObject(String content) {
+        int start = content.indexOf('{');
+        int end = content.lastIndexOf('}');
+        if (start >= 0 && end > start) {
+            return content.substring(start, end + 1);
+        }
+        return content;
+    }
+
+    private String buildLocalFollowUpQuestion(AiInterviewFollowUpRequest request) {
+        List<String> askedQuestions = request.getHistory() == null
+                ? List.of()
+                : request.getHistory().stream()
+                        .filter(item -> "ai".equalsIgnoreCase(item.getRole()) || "interviewer".equalsIgnoreCase(item.getRole()))
+                        .map(AiInterviewConversationMessageDTO::getContent)
+                        .toList();
+        List<String> candidates = List.of(
+                "你刚才提到了核心概念，请进一步说明它在真实项目中的落地场景是什么？",
+                "如果这个方案在线上出现性能瓶颈，你会优先排查哪些指标？",
+                "请结合 Java 后端项目经验，说明这个问题可能带来的边界条件和风险。",
+                "如果让你重新设计这个方案，你会如何权衡一致性、性能和可维护性？",
+                "请从源码或底层机制角度，再深入解释一下你回答中的关键点。");
+        return candidates.stream()
+                .filter(question -> askedQuestions.stream().noneMatch(question::equals))
+                .findFirst()
+                .orElse("请换一个更底层的角度，继续深入说明你的实现思路和取舍。");
     }
 
     private InterviewSnapshot readInterviewSnapshot(AiReviewRecord record) {
@@ -231,6 +367,30 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
 
     private boolean containsAny(String answer, List<String> keywords) {
         return keywords.stream().anyMatch(answer::contains);
+    }
+
+    private EnterpriseScoreVO buildEnterpriseScore(int totalScore, List<AiInterviewQuestionResultVO> questionResults) {
+        int answeredCount = (int) questionResults.stream()
+                .filter(item -> StringUtils.hasText(item.getUserAnswer()))
+                .count();
+        int answerCoverageBonus = Math.min(8, answeredCount * 2);
+        int lowScorePenalty = (int) questionResults.stream()
+                .filter(item -> item.getScore() != null && item.getScore() < 70)
+                .count() * 3;
+        int averageReferenceCoverage = Math.round((float) questionResults.stream()
+                .mapToInt(item -> item.getAdvantages() == null ? 0 : Math.min(3, item.getAdvantages().size()) * 4)
+                .average()
+                .orElse(0D));
+
+        return new EnterpriseScoreVO(
+                clamp(totalScore + averageReferenceCoverage - lowScorePenalty),
+                clamp(totalScore + answerCoverageBonus - lowScorePenalty),
+                clamp(totalScore + answerCoverageBonus - 4),
+                clamp(totalScore + averageReferenceCoverage - 2));
+    }
+
+    private int clamp(int score) {
+        return Math.max(0, Math.min(100, score));
     }
 
     private String normalize(String value) {
