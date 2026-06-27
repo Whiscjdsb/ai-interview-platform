@@ -45,8 +45,13 @@
               :rows="10"
               maxlength="5000"
               show-word-limit
+              @keydown.enter.exact.prevent="handleEnterSubmit"
               placeholder="请输入你的回答。点击“生成追问”后，AI 会基于本轮回答继续深入提问。"
             />
+            <div class="answer-hint">
+              <span>Enter 生成 AI 追问</span>
+              <span>Shift + Enter 换行</span>
+            </div>
 
             <div class="session-actions">
               <el-button :disabled="currentQuestionIndex === 0" @click="goPrevious">上一题</el-button>
@@ -65,7 +70,7 @@
               <span class="thinking-dot" />
               <span>AI 正在思考...</span>
             </div>
-            <div v-if="conversationHistory.length" class="chat-list">
+            <div v-if="conversationHistory.length" ref="chatListRef" class="chat-list">
               <div
                 v-for="(item, index) in conversationHistory"
                 :key="`${item.role}-${index}`"
@@ -96,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -121,6 +126,7 @@ const session = ref<StoredInterviewSession | null>(null)
 const currentQuestionIndex = ref(0)
 const currentAnswer = ref('')
 const lastFollowUpReason = ref('')
+const chatListRef = ref<HTMLDivElement>()
 
 const currentQuestion = computed(() => session.value?.interview.questions[currentQuestionIndex.value])
 const questionCount = computed(() => session.value?.interview.questions.length || 0)
@@ -167,6 +173,12 @@ watch(currentAnswer, (value) => {
   session.value.answers[currentQuestion.value.questionNo] = buildCombinedAnswer(value)
   saveInterviewSession(session.value)
 })
+watch(
+  () => conversationHistory.value.length,
+  () => {
+    scrollChatToBottom()
+  }
+)
 
 onMounted(loadSession)
 
@@ -253,10 +265,28 @@ async function generateFollowUp() {
     lastFollowUpReason.value = response.reason
     currentAnswer.value = ''
     saveInterviewSession(session.value)
+    await scrollChatToBottom()
   } catch (error) {
     ElMessage.error(errorMessage(error, '生成追问失败'))
   } finally {
     followUpLoading.value = false
+  }
+}
+
+function handleEnterSubmit() {
+  if (!followUpLoading.value) {
+    generateFollowUp()
+  }
+}
+
+async function scrollChatToBottom() {
+  await nextTick()
+  const element = chatListRef.value
+  if (element) {
+    element.scrollTo({
+      top: element.scrollHeight,
+      behavior: 'smooth'
+    })
   }
 }
 
@@ -320,6 +350,9 @@ function buildCombinedAnswer(draft: string) {
 .session-panel {
   padding: 22px;
   min-height: 420px;
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.08), transparent 34%),
+    #ffffff;
 }
 
 .session-header {
@@ -347,7 +380,7 @@ function buildCombinedAnswer(draft: string) {
 
 .session-main {
   border: 1px solid #e5edf5;
-  border-radius: 8px;
+  border-radius: 16px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   padding: 18px;
 }
@@ -355,7 +388,7 @@ function buildCombinedAnswer(draft: string) {
 .question-box {
   margin-bottom: 18px;
   border-left: 4px solid #2563eb;
-  border-radius: 8px;
+  border-radius: 16px;
   background: #ffffff;
   padding: 16px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
@@ -390,8 +423,20 @@ function buildCombinedAnswer(draft: string) {
 }
 
 .answer-input :deep(.el-textarea__inner) {
-  border-radius: 8px;
+  border-radius: 16px;
+  border-color: #bfdbfe;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.08);
   line-height: 1.7;
+  padding: 14px 16px;
+}
+
+.answer-hint {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  color: #829ab1;
+  font-size: 12px;
 }
 
 .session-actions {
@@ -407,8 +452,9 @@ function buildCombinedAnswer(draft: string) {
 
 .chat-panel {
   border: 1px solid #d9e2ec;
-  border-radius: 8px;
-  background: #f8fafc;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, #f8fbff 0%, #f5f8fc 100%);
   padding: 14px;
   min-height: 320px;
 }
@@ -427,12 +473,25 @@ function buildCombinedAnswer(draft: string) {
 }
 
 .chat-list {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
   max-height: 420px;
   overflow: auto;
-  padding: 4px 4px 4px 0;
+  scroll-behavior: smooth;
+  padding: 4px 4px 4px 14px;
+}
+
+.chat-list::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #bfdbfe, #ddd6fe);
 }
 
 .thinking-row {
@@ -456,13 +515,27 @@ function buildCombinedAnswer(draft: string) {
   animation: pulse-thinking 1s ease-in-out infinite;
 }
 
+.thinking-row::after {
+  content: '';
+  width: 18px;
+  height: 6px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, #f59e0b 42%, transparent 45%) 0 50% / 6px 6px,
+    radial-gradient(circle, #f59e0b 42%, transparent 45%) 6px 50% / 6px 6px,
+    radial-gradient(circle, #f59e0b 42%, transparent 45%) 12px 50% / 6px 6px;
+  animation: typing-dots 1s steps(3, end) infinite;
+}
+
 .chat-bubble {
+  position: relative;
   width: fit-content;
   max-width: 88%;
-  border-radius: 14px;
+  border-radius: 18px;
   padding: 12px 14px;
   line-height: 1.6;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  animation: bubble-in 0.18s ease both;
 }
 
 .chat-bubble span {
@@ -481,14 +554,14 @@ function buildCombinedAnswer(draft: string) {
 .chat-bubble--ai {
   align-self: flex-start;
   border: 1px solid #bfdbfe;
-  background: #eff6ff;
+  background: linear-gradient(135deg, #eff6ff, #eef2ff);
   color: #1e3a8a;
 }
 
 .chat-bubble--user {
   align-self: flex-end;
   border: 1px solid #bbf7d0;
-  background: #f0fdf4;
+  background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
   color: #166534;
 }
 
@@ -502,6 +575,32 @@ function buildCombinedAnswer(draft: string) {
   50% {
     opacity: 1;
     transform: scale(1.15);
+  }
+}
+
+@keyframes typing-dots {
+  0% {
+    opacity: 0.32;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.32;
+  }
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

@@ -12,7 +12,23 @@
     <el-alert v-if="errorText" :title="errorText" type="error" show-icon :closable="false" />
 
     <section v-loading="loading" class="question-list-panel">
-      <template v-if="questions.length">
+      <div v-if="loading && !questions.length" class="question-skeleton-list">
+        <el-skeleton v-for="item in 5" :key="item" animated>
+          <template #template>
+            <div class="question-skeleton-card">
+              <el-skeleton-item variant="h3" style="width: 48%" />
+              <div class="skeleton-meta">
+                <el-skeleton-item variant="text" style="width: 76px" />
+                <el-skeleton-item variant="text" style="width: 64px" />
+                <el-skeleton-item variant="text" style="width: 92px" />
+              </div>
+              <el-skeleton-item variant="text" style="width: 86%" />
+            </div>
+          </template>
+        </el-skeleton>
+      </div>
+
+      <template v-else-if="questions.length">
         <div class="list-toolbar">
           <div>
             <strong>题目列表</strong>
@@ -137,10 +153,12 @@ function goPractice(id: number) {
 .question-list-panel {
   min-height: 320px;
   border: 1px solid #e5edf5;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 16px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+    #ffffff;
+  padding: 18px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
 }
 
 .list-toolbar {
@@ -151,6 +169,24 @@ function goPractice(id: number) {
   border-bottom: 1px solid #e5edf5;
   margin-bottom: 14px;
   padding-bottom: 14px;
+}
+
+.question-skeleton-list {
+  display: grid;
+  gap: 14px;
+}
+
+.question-skeleton-card {
+  border: 1px solid #e5edf5;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.skeleton-meta {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
 }
 
 .list-toolbar strong,
@@ -176,6 +212,12 @@ function goPractice(id: number) {
   margin-top: 18px;
   padding-top: 16px;
   overflow-x: auto;
+}
+
+.pagination-row :deep(.el-pagination) {
+  border-radius: 999px;
+  background: #f8fafc;
+  padding: 8px 12px;
 }
 
 .el-alert {

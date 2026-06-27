@@ -8,6 +8,25 @@
       <el-button type="primary" @click="reload">刷新数据</el-button>
     </div>
 
+    <section class="dashboard-hero">
+      <div class="hero-copy">
+        <span class="hero-eyebrow">AI Interview Platform</span>
+        <h2>把刷题、追问、评分和复盘放进同一条学习路径</h2>
+        <p>从题库练习进入 AI 多轮面试，再用评分报告、PDF、分享和成长分析沉淀可展示的学习成果。</p>
+        <div class="hero-actions">
+          <el-button type="primary" size="large" @click="router.push('/ai-interview')">开始 AI 面试</el-button>
+          <el-button size="large" @click="router.push('/questions')">进入题库</el-button>
+        </div>
+      </div>
+      <div class="hero-feature-grid">
+        <div v-for="feature in heroFeatures" :key="feature.title" class="hero-feature-card">
+          <span>{{ feature.icon }}</span>
+          <strong>{{ feature.title }}</strong>
+          <p>{{ feature.desc }}</p>
+        </div>
+      </div>
+    </section>
+
     <el-alert v-if="errorText" :title="errorText" type="error" show-icon :closable="false" />
 
     <section class="stats-grid">
@@ -41,6 +60,7 @@
 
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 
 import { userOverviewApi, userTrendApi, userWrongAnalysisApi } from '@/api/statistics'
@@ -50,6 +70,7 @@ import { useUserStore } from '@/stores/user'
 import { errorMessage } from '@/utils/error'
 
 const userStore = useUserStore()
+const router = useRouter()
 const loading = ref(false)
 const errorText = ref('')
 const trend = ref<LearningTrendItem[]>([])
@@ -58,6 +79,14 @@ const trendChartRef = ref<HTMLDivElement>()
 const wrongChartRef = ref<HTMLDivElement>()
 let trendChart: echarts.ECharts | null = null
 let wrongChart: echarts.ECharts | null = null
+
+const heroFeatures = [
+  { icon: 'AI', title: 'AI 面试', desc: '岗位、难度、题数可配置' },
+  { icon: 'DS', title: 'DeepSeek 评分', desc: '支持 Mock / DeepSeek 切换' },
+  { icon: 'Q+', title: '多轮追问', desc: '围绕回答逐步深入' },
+  { icon: 'PDF', title: '报告导出', desc: '生成正式面试报告' },
+  { icon: 'UP', title: '成长分析', desc: '沉淀长期能力画像' }
+]
 
 const overview = reactive<UserStatisticsOverview>({
   totalAnswerCount: 0,
@@ -179,7 +208,123 @@ function resizeCharts() {
 </script>
 
 <style scoped>
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(191, 219, 254, 0.75);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 84% 16%, rgba(124, 58, 237, 0.2), transparent 30%),
+    linear-gradient(135deg, #0f172a 0%, #1e3a8a 48%, #2563eb 100%);
+  padding: 26px;
+  color: #ffffff;
+  box-shadow: 0 18px 44px rgba(37, 99, 235, 0.22);
+  overflow: hidden;
+}
+
+.hero-copy {
+  align-self: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hero-copy h2 {
+  margin: 14px 0 10px;
+  max-width: 660px;
+  font-size: 30px;
+  line-height: 1.25;
+}
+
+.hero-copy p {
+  margin: 0;
+  max-width: 620px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.7;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.hero-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-feature-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  backdrop-filter: blur(12px);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.hero-feature-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.hero-feature-card span {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hero-feature-card strong,
+.hero-feature-card p {
+  display: block;
+}
+
+.hero-feature-card p {
+  margin: 5px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
 .el-alert {
   margin-bottom: 18px;
+}
+
+@media (max-width: 980px) {
+  .dashboard-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-hero {
+    padding: 18px;
+  }
+
+  .hero-copy h2 {
+    font-size: 24px;
+  }
+
+  .hero-feature-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

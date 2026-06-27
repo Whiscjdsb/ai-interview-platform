@@ -1,6 +1,20 @@
 <template>
   <div>
-    <section v-if="result" class="result-panel panel">
+    <section v-if="!pageReady" class="result-panel panel">
+      <el-skeleton animated>
+        <template #template>
+          <div class="result-skeleton-hero">
+            <el-skeleton-item variant="h1" style="width: 38%" />
+            <el-skeleton-item variant="circle" style="width: 120px; height: 120px" />
+          </div>
+          <div class="result-skeleton-grid">
+            <el-skeleton-item v-for="item in 3" :key="item" variant="rect" style="height: 170px" />
+          </div>
+        </template>
+      </el-skeleton>
+    </section>
+
+    <section v-else-if="result" class="result-panel panel">
       <div class="result-header">
         <div>
           <h1>{{ result.position }} 面试结果</h1>
@@ -31,6 +45,7 @@
             <div class="card-title">能力雷达图</div>
           </template>
           <div ref="radarChartRef" class="radar-chart" />
+          <p class="radar-note">雷达图将当前总分映射到 Java 基础、Spring Boot、数据库、系统设计和项目经验五个维度，用于快速判断复盘重点。</p>
         </el-card>
       </div>
 
@@ -150,6 +165,7 @@ const pdfLoading = ref(false)
 const shareLoading = ref(false)
 const shareDialogVisible = ref(false)
 const shareUrl = ref('')
+const pageReady = ref(false)
 let radarChart: echarts.ECharts | null = null
 
 const structuredResult = computed(() => result.value?.structuredResult || null)
@@ -175,6 +191,7 @@ const showRawResponse = computed(() => !structuredResult.value && Boolean(rawRes
 
 onMounted(async () => {
   result.value = getInterviewResult(route.params.id as string)
+  pageReady.value = true
   await nextTick()
   renderRadarChart()
   window.addEventListener('resize', resizeRadarChart)
@@ -328,15 +345,32 @@ function toFrontendShareUrl(url: string) {
   padding: 22px;
 }
 
+.result-skeleton-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.result-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
 .result-header {
   display: flex;
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
   border: 1px solid #e5edf5;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 52%, #eef6ff 100%);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 86% 22%, rgba(124, 58, 237, 0.18), transparent 26%),
+    linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #eef6ff 100%);
   padding: 20px;
+  box-shadow: 0 16px 42px rgba(37, 99, 235, 0.1);
 }
 
 .result-header h1 {
@@ -353,7 +387,7 @@ function toFrontendShareUrl(url: string) {
   min-width: 110px;
   text-align: right;
   border: 1px solid #e5edf5;
-  border-radius: 8px;
+  border-radius: 18px;
   background: #ffffff;
   padding: 14px 18px;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
@@ -397,7 +431,8 @@ function toFrontendShareUrl(url: string) {
 .score-card,
 .radar-card,
 .analysis-card {
-  border-radius: 8px;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 }
 
 .score-card :deep(.el-card__body) {
@@ -424,6 +459,13 @@ function toFrontendShareUrl(url: string) {
   height: 280px;
 }
 
+.radar-note {
+  margin: 0 0 4px;
+  color: #62748e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
 .analysis-card {
   margin-bottom: 18px;
 }
@@ -436,10 +478,18 @@ function toFrontendShareUrl(url: string) {
 
 .analysis-section {
   border: 1px solid #d9e2ec;
-  border-radius: 8px;
+  border-radius: 16px;
   padding: 16px;
   background: #ffffff;
   min-height: 150px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.analysis-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 .analysis-section h3,
@@ -486,7 +536,7 @@ function toFrontendShareUrl(url: string) {
 
 .reference-section pre {
   margin: 10px 0 0;
-  border-radius: 8px;
+  border-radius: 14px;
   background: #f4f6f8;
   padding: 14px;
   color: #334e68;
@@ -506,12 +556,50 @@ function toFrontendShareUrl(url: string) {
   font-size: 20px;
 }
 
+.question-results {
+  position: relative;
+  padding-left: 18px;
+}
+
+.question-results::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 36px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #bfdbfe, #ddd6fe);
+}
+
 .question-result {
+  position: relative;
   border: 1px solid #d9e2ec;
-  border-radius: 8px;
+  border-radius: 16px;
   background: #ffffff;
   padding: 16px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.question-result::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 22px;
+  width: 10px;
+  height: 10px;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: 0 0 0 2px #bfdbfe;
+}
+
+.question-result:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
 }
 
 .question-result + .question-result {
@@ -571,10 +659,19 @@ function toFrontendShareUrl(url: string) {
 }
 
 .result-actions {
+  position: sticky;
+  bottom: 14px;
+  z-index: 5;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 18px;
+  border: 1px solid rgba(217, 226, 236, 0.88);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 12px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px);
 }
 
 .share-hint {
@@ -585,6 +682,7 @@ function toFrontendShareUrl(url: string) {
 
 @media (max-width: 920px) {
   .result-layout,
+  .result-skeleton-grid,
   .analysis-grid {
     grid-template-columns: 1fr;
   }

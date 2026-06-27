@@ -1,6 +1,20 @@
 :root {
   color: #1f2933;
   background: #f4f7fb;
+  --ai-primary: #2563eb;
+  --ai-primary-soft: #eff6ff;
+  --ai-accent: #7c3aed;
+  --ai-success: #16a34a;
+  --ai-warning: #d97706;
+  --ai-danger: #dc2626;
+  --ai-text: #102a43;
+  --ai-muted: #62748e;
+  --ai-border: #d9e2ec;
+  --ai-surface: #ffffff;
+  --ai-radius: 16px;
+  --ai-radius-sm: 12px;
+  --ai-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  --ai-shadow-soft: 0 10px 26px rgba(15, 23, 42, 0.06);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -69,7 +83,9 @@ a {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
-  background: #f4f7fb;
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.08), transparent 34%),
+    linear-gradient(180deg, #f7faff 0%, #f4f7fb 44%, #eef4fb 100%);
 }
 
 .sidebar {
@@ -143,6 +159,12 @@ a {
   margin-bottom: 20px;
 }
 
+.page-header h1,
+.panel-title,
+.topbar-title {
+  letter-spacing: 0;
+}
+
 .page-header h1 {
   margin: 0 0 6px;
   font-size: 26px;
@@ -167,9 +189,10 @@ a {
 }
 
 .panel {
-  border-radius: 8px;
-  border: 1px solid #d9e2ec;
-  background: #ffffff;
+  border-radius: var(--ai-radius);
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--ai-shadow-soft);
   min-width: 0;
 }
 
