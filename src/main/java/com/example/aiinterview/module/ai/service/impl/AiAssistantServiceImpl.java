@@ -41,12 +41,14 @@ import com.example.aiinterview.module.statistics.service.UserStatisticsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AiAssistantServiceImpl implements AiAssistantService {
 
@@ -247,6 +249,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
             adminStatisticsCacheService.evictAll();
             return record;
         } catch (Exception ex) {
+            log.error("Failed to save AI history record. recordType={}, userId={}, questionId={}", recordType, userId, questionId, ex);
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "Failed to save AI history record");
         }
     }
@@ -259,6 +262,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
             record.setScore(score);
             aiReviewRecordMapper.updateById(record);
         } catch (Exception ex) {
+            log.error("Failed to update AI history record. recordId={}", record == null ? null : record.getId(), ex);
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "Failed to update AI history record");
         }
     }
