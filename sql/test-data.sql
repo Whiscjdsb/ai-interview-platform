@@ -14,11 +14,34 @@ ON DUPLICATE KEY UPDATE
   status = VALUES(status),
   update_time = CURRENT_TIMESTAMP;
 
+INSERT INTO sys_user (username, nickname, password_hash, status)
+VALUES
+  (
+    'demo_user',
+    'Demo User',
+    '$2a$10$BCbYbDRn7VrxyjFelpJq8OckoO1z2fB7PjWLGaKjrqKOtpWV1SB5y',
+    1
+  )
+ON DUPLICATE KEY UPDATE
+  nickname = VALUES(nickname),
+  password_hash = VALUES(password_hash),
+  status = VALUES(status),
+  update_time = CURRENT_TIMESTAMP;
+
 INSERT INTO sys_user_role (user_id, role_id)
 SELECT u.id, r.id
 FROM sys_user u
 INNER JOIN sys_role r ON r.role_code = 'ADMIN'
 WHERE u.username = 'admin'
+ON DUPLICATE KEY UPDATE
+  deleted = 0,
+  update_time = CURRENT_TIMESTAMP;
+
+INSERT INTO sys_user_role (user_id, role_id)
+SELECT u.id, r.id
+FROM sys_user u
+INNER JOIN sys_role r ON r.role_code = 'USER'
+WHERE u.username = 'demo_user'
 ON DUPLICATE KEY UPDATE
   deleted = 0,
   update_time = CURRENT_TIMESTAMP;
@@ -29,7 +52,8 @@ VALUES
   ('Spring Boot', 'Spring Boot backend development'),
   ('MySQL', 'MySQL database knowledge'),
   ('Redis', 'Redis cache and data structure knowledge'),
-  ('Security', 'Authentication and authorization knowledge')
+  ('Security', 'Authentication and authorization knowledge'),
+  ('Project Practice', 'Real backend project design and troubleshooting')
 ON DUPLICATE KEY UPDATE
   description = VALUES(description),
   deleted = 0,
@@ -120,6 +144,23 @@ WHERE u.username = 'admin'
     SELECT 1 FROM question existing WHERE existing.title = 'JWT stateless authentication' AND existing.deleted = 0
   );
 
+INSERT INTO question (title, content, question_type, difficulty, correct_answer, analysis, creator_id, source, status)
+SELECT
+  'Backend project troubleshooting',
+  'In a Spring Boot project, the frontend reports Network Error when calling login, but /api/health works in the browser. How would you troubleshoot it?',
+  'SHORT_ANSWER',
+  'MEDIUM',
+  'Check browser Network details, CORS preflight, Spring Security CORS configuration, allowed origins, allowed headers, OPTIONS request handling, backend logs, and Axios baseURL.',
+  'This is a common project practice question. Health check working only proves the backend is alive; login failing from the browser often points to CORS, preflight, security filter chain, or frontend baseURL configuration.',
+  u.id,
+  'seed',
+  1
+FROM sys_user u
+WHERE u.username = 'admin'
+  AND NOT EXISTS (
+    SELECT 1 FROM question existing WHERE existing.title = 'Backend project troubleshooting' AND existing.deleted = 0
+  );
+
 INSERT INTO question_tag_relation (question_id, tag_id)
 SELECT q.id, t.id
 FROM question q
@@ -153,6 +194,20 @@ SELECT q.id, t.id
 FROM question q
 INNER JOIN question_tag t ON t.tag_name = 'Security'
 WHERE q.title = 'JWT stateless authentication'
+ON DUPLICATE KEY UPDATE deleted = 0, update_time = CURRENT_TIMESTAMP;
+
+INSERT INTO question_tag_relation (question_id, tag_id)
+SELECT q.id, t.id
+FROM question q
+INNER JOIN question_tag t ON t.tag_name = 'Project Practice'
+WHERE q.title = 'Backend project troubleshooting'
+ON DUPLICATE KEY UPDATE deleted = 0, update_time = CURRENT_TIMESTAMP;
+
+INSERT INTO question_tag_relation (question_id, tag_id)
+SELECT q.id, t.id
+FROM question q
+INNER JOIN question_tag t ON t.tag_name = 'Spring Boot'
+WHERE q.title = 'Backend project troubleshooting'
 ON DUPLICATE KEY UPDATE deleted = 0, update_time = CURRENT_TIMESTAMP;
 
 UPDATE question

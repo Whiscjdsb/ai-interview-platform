@@ -309,6 +309,11 @@ npm run dev
 - Swagger: `http://localhost:8080/swagger-ui.html`
 - 前端: `http://localhost:5173` 或 `http://localhost:5174`
 
+默认演示账号由 `sql/test-data.sql` 提供，密码在数据库中保存为 BCrypt 密文：
+
+- 普通用户：`demo_user / admin123`
+- 管理员：`admin / admin123`
+
 ## 编译、测试与构建
 
 后端编译：
@@ -370,9 +375,11 @@ System final AI Provider = ...
 
 - [项目交付说明](docs/DELIVERY.md)
 - [演示脚本](docs/DEMO_SCRIPT.md)
+- [演示准备清单](docs/DEMO_READY.md)
+- [部署说明](docs/DEPLOYMENT_GUIDE.md)
 - [API 概览](docs/API_OVERVIEW.md)
 - [测试报告](docs/TEST_REPORT.md)
 - [项目总结](docs/PROJECT_SUMMARY.md)
 - [面试讲解稿](docs/INTERVIEW_SCRIPT.md)
+- [面试高频问答](docs/INTERVIEW_QA.md)
 - [简历描述模板](docs/RESUME_DESCRIPTION.md)
-
