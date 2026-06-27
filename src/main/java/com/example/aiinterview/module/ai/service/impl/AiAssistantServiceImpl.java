@@ -15,6 +15,7 @@ import com.example.aiinterview.common.PageResult;
 import com.example.aiinterview.module.admin.service.AdminStatisticsCacheService;
 import com.example.aiinterview.module.ai.dto.AiHistoryQueryRequest;
 import com.example.aiinterview.module.ai.dto.AiReviewAnswerRequest;
+import com.example.aiinterview.module.ai.dto.AiScoreContext;
 import com.example.aiinterview.module.ai.dto.GenerateInterviewRequest;
 import com.example.aiinterview.module.ai.entity.AiReviewRecord;
 import com.example.aiinterview.module.ai.enums.AiRecordType;
@@ -62,6 +63,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     private final UserStatisticsService userStatisticsService;
     private final ObjectMapper objectMapper;
     private final AdminStatisticsCacheService adminStatisticsCacheService;
+    private final ScoreEngine scoreEngine;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,7 +76,17 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         List<TagVO> tags = loadTags(List.of(question.getId())).getOrDefault(question.getId(), List.of());
         AiService aiService = aiServiceFactory.current();
         AiAnswerReviewVO result = aiService.reviewAnswer(question, tags, request.getAnswer());
-        result.setScore(result.getScore() == null ? 0 : Math.max(0, Math.min(100, result.getScore())));
+        int finalScore = scoreEngine.calculateScore(AiScoreContext.builder()
+                .deepseekScore(result.getScore())
+                .userAnswer(request.getAnswer())
+                .questionType(question.getQuestionType().name())
+                .fallback(!"deepseek".equalsIgnoreCase(aiService.provider()))
+                .referencePoints(reviewReferencePoints(question, tags))
+                .build());
+        result.setScore(finalScore);
+        if (result.getStructuredResult() != null) {
+            result.getStructuredResult().setScore(finalScore);
+        }
         result.setModelName(aiService.modelName());
 
         saveRecord(userId, question.getId(), AiRecordType.ANSWER_REVIEW, request, result, BigDecimal.valueOf(result.getScore()), result.getModelName());
@@ -226,6 +238,23 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         }
         return questionMapper.selectBatchIds(questionIds).stream()
                 .collect(Collectors.toMap(Question::getId, Function.identity(), (left, right) -> left));
+    }
+
+    private List<String> reviewReferencePoints(Question question, List<TagVO> tags) {
+        List<String> points = new java.util.ArrayList<>();
+        if (tags != null) {
+            tags.stream()
+                    .map(TagVO::getTagName)
+                    .filter(StringUtils::hasText)
+                    .forEach(points::add);
+        }
+        if (StringUtils.hasText(question.getCorrectAnswer())) {
+            points.add(question.getCorrectAnswer());
+        }
+        if (StringUtils.hasText(question.getAnalysis())) {
+            points.add(question.getAnalysis());
+        }
+        return points;
     }
 
     private AiReviewRecord saveRecord(Long userId, Long questionId, AiRecordType recordType, Object input, Object result, BigDecimal score, String modelName) {

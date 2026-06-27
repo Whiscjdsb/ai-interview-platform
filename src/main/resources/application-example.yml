@@ -39,7 +39,7 @@ app:
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
   ai:
     # Supported values: mock, deepseek. Reserved extension value: openai.
-    provider: ${AI_PROVIDER:mock}
+    provider: ${APP_AI_PROVIDER:${AI_PROVIDER:}}
     # Generic AI key placeholder. Do not commit real keys.
     api-key: ${AI_API_KEY:}
     deepseek:

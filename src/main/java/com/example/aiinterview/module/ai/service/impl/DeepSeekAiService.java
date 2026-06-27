@@ -12,17 +12,21 @@ import com.example.aiinterview.module.question.vo.TagVO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DeepSeekAiService extends MockAiService {
 
     private static final String API_URL = "https://api.deepseek.com/chat/completions";
@@ -47,6 +51,11 @@ public class DeepSeekAiService extends MockAiService {
     }
 
     @Override
+    public boolean isAvailable() {
+        return StringUtils.hasText(apiKey);
+    }
+
+    @Override
     public AiAnswerReviewVO reviewAnswer(Question question, List<TagVO> tags, String answer) {
         String prompt = buildReviewPrompt(question, answer);
         String rawResponse = chat(prompt);
@@ -56,6 +65,7 @@ public class DeepSeekAiService extends MockAiService {
 
     public String chat(String prompt) {
         if (!StringUtils.hasText(apiKey)) {
+            log.warn("DeepSeek request skipped because apiKey is not configured");
             throw new BusinessException(ErrorCode.BAD_REQUEST, "DeepSeek API key is not configured");
         }
 
@@ -71,9 +81,23 @@ public class DeepSeekAiService extends MockAiService {
                 "temperature", 0.3);
 
         try {
-            String response = restTemplate.postForObject(API_URL, new HttpEntity<>(body, headers), String.class);
-            return response == null ? "" : response;
+            log.info("DeepSeek request sending: url={}, model={}, promptChars={}", API_URL, MODEL_NAME, prompt.length());
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(
+                    API_URL,
+                    new HttpEntity<>(body, headers),
+                    String.class);
+            String response = responseEntity.getBody() == null ? "" : responseEntity.getBody();
+            log.info("DeepSeek response received: status={}, bodyChars={}",
+                    responseEntity.getStatusCode().value(),
+                    response.length());
+            return response;
+        } catch (HttpStatusCodeException ex) {
+            log.warn("DeepSeek response failed: status={}, bodyChars={}",
+                    ex.getStatusCode().value(),
+                    ex.getResponseBodyAsString() == null ? 0 : ex.getResponseBodyAsString().length());
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "DeepSeek request failed");
         } catch (RestClientException ex) {
+            log.warn("DeepSeek request failed before valid response: {}", ex.getMessage());
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "DeepSeek request failed");
         }
     }
@@ -87,6 +111,14 @@ public class DeepSeekAiService extends MockAiService {
                 %s
 
                 Scoring requirements:
+                You must grade strictly as a senior Java interviewer. Do not give comforting high scores.
+                If the user answer is empty, whitespace only, or has no content, score must be 0-5.
+                If the answer is clearly invalid, such as "我不会", "不会", "不知道", "不清楚", "不了解", "没学过", "不会答", "不知道怎么答", "嗯", "哦", "对", "是", "不是", "不知道了", or "没思路", score must be 0-15.
+                If the answer has fewer than 10 meaningful characters and no technical keyword, score must not exceed 15.
+                If the answer has fewer than 20 meaningful characters and no technical keyword, score must not exceed 25.
+                If the answer is generic, vague, or lacks key technical points, score must not exceed 50.
+                Only answers with valid technical keywords plus explanation, principles, concrete cases, or complete analysis may score above 40.
+                Only answers with core concepts, key principles, concrete cases, or complete analysis may score above 70.
                 Return only one valid JSON object. Do not use Markdown, code fences, comments, or extra text.
                 The JSON object must contain exactly these fields:
                 {

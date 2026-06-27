@@ -37,7 +37,7 @@ app:
     secret: ${JWT_SECRET:dev-jwt-secret-change-me-please-32-chars-min}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
   ai:
-    provider: ${AI_PROVIDER:mock}
+    provider: ${APP_AI_PROVIDER:${AI_PROVIDER:}}
     deepseek:
       api-key: ${DEEPSEEK_API_KEY:}
 

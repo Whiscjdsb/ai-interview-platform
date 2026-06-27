@@ -17,6 +17,10 @@ public interface AiService {
 
     String modelName();
 
+    default boolean isAvailable() {
+        return true;
+    }
+
     AiAnswerReviewVO reviewAnswer(Question question, List<TagVO> tags, String answer);
 
     GenerateInterviewVO generateInterview(GenerateInterviewRequest request, List<Question> seedQuestions);

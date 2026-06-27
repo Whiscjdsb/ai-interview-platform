@@ -44,13 +44,14 @@ public class MockAiService implements AiService {
 
     @Override
     public AiAnswerReviewVO reviewAnswer(Question question, List<TagVO> tags, String answer) {
-        String normalized = answer.toLowerCase(Locale.ROOT);
+        String safeAnswer = answer == null ? "" : answer.trim();
+        String normalized = safeAnswer.toLowerCase(Locale.ROOT);
         int score = 45;
 
         // Mock scoring favors sufficient length, domain keywords, and tag-aware coverage.
-        if (answer.length() >= 80) {
+        if (safeAnswer.length() >= 80) {
             score += 15;
-        } else if (answer.length() >= 40) {
+        } else if (safeAnswer.length() >= 40) {
             score += 8;
         }
         int keywordHits = keywordHits(normalized, tags);
@@ -61,11 +62,15 @@ public class MockAiService implements AiService {
         score = Math.max(0, Math.min(100, score));
 
         List<String> advantages = new ArrayList<>();
-        advantages.add("能够围绕题目给出直接回答");
+        if (!StringUtils.hasText(safeAnswer)) {
+            advantages.add("回答未提供有效技术内容");
+        } else {
+            advantages.add("能够围绕题目给出直接回答");
+        }
         if (keywordHits > 0) {
             advantages.add("回答中覆盖了部分关键术语");
         }
-        if (answer.length() >= 80) {
+        if (safeAnswer.length() >= 80) {
             advantages.add("回答篇幅较充分，有一定展开");
         }
 

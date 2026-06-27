@@ -46,11 +46,28 @@ REDIS_PASSWORD=
 REDIS_DATABASE=0
 JWT_SECRET=replace-with-a-long-random-secret
 JWT_EXPIRATION_SECONDS=86400
-AI_PROVIDER=mock
+APP_AI_PROVIDER=deepseek
+# Optional compatibility alias. Use either APP_AI_PROVIDER or AI_PROVIDER.
+AI_PROVIDER=
 AI_API_KEY=
-DEEPSEEK_API_KEY=
+DEEPSEEK_API_KEY=replace-with-your-deepseek-key
 OPENAI_API_KEY=
 ```
+
+AI provider resolution:
+
+1. `app.ai.provider` from JVM/system/application properties has highest priority.
+2. `APP_AI_PROVIDER` is supported for IDEA Run Configuration environment variables.
+3. `AI_PROVIDER` is also supported for compatibility.
+4. If all provider configs are blank, the backend falls back to `mock`.
+5. When `deepseek` is selected but `DEEPSEEK_API_KEY` is blank, the backend logs the reason and falls back to `MockAiService`.
+
+IDEA startup note:
+
+- In `Run/Debug Configurations -> Environment variables`, set `APP_AI_PROVIDER=deepseek;DEEPSEEK_API_KEY=your_key`.
+- Or set VM options: `-Dapp.ai.provider=deepseek`.
+- Do not rely on shell-only variables if IDEA was opened before the variables were created; restart IDEA or set them directly in the Run Configuration.
+- Startup logs should contain `System final AI Provider = deepseek` and request logs should show `selectedService=DeepSeekAiService`.
 
 ## IDEA 启动步骤
 

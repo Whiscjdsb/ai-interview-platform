@@ -18,6 +18,7 @@ import com.example.aiinterview.module.ai.dto.AiInterviewAnswerSubmitRequest;
 import com.example.aiinterview.module.ai.dto.AiInterviewConversationMessageDTO;
 import com.example.aiinterview.module.ai.dto.AiInterviewFollowUpRequest;
 import com.example.aiinterview.module.ai.dto.AiInterviewSubmitRequest;
+import com.example.aiinterview.module.ai.dto.AiScoreContext;
 import com.example.aiinterview.module.ai.dto.GenerateInterviewRequest;
 import com.example.aiinterview.module.ai.entity.AiReviewRecord;
 import com.example.aiinterview.module.ai.enums.AiRecordType;
@@ -47,6 +48,7 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
     private final ObjectMapper objectMapper;
     private final AdminStatisticsCacheService adminStatisticsCacheService;
     private final AiServiceFactory aiServiceFactory;
+    private final ScoreEngine scoreEngine;
 
     @Override
     public AiInterviewDetailVO getInterview(Long userId, Long id) {
@@ -295,7 +297,13 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
             InterviewQuestionSnapshot question,
             AiInterviewAnswerSubmitRequest answerRequest) {
         String answer = answerRequest == null ? "" : normalize(answerRequest.getAnswer());
-        int score = calculateScore(question, answer);
+        int score = scoreEngine.calculateScore(AiScoreContext.builder()
+                .deepseekScore(null)
+                .userAnswer(answer)
+                .questionType(question.category())
+                .fallback(true)
+                .referencePoints(question.referencePoints())
+                .build());
         List<String> advantages = new ArrayList<>();
         if (StringUtils.hasText(answer)) {
             advantages.add("能够给出完整作答");
@@ -339,16 +347,9 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
                 referenceAnswer);
     }
 
-    private int calculateScore(InterviewQuestionSnapshot question, String answer) {
-        if (!StringUtils.hasText(answer)) {
-            return 35;
-        }
-        int lengthScore = Math.min(30, answer.length() / 8);
-        int referenceScore = (int) Math.min(30, referenceHitCount(question.referencePoints(), answer) * 10);
+    /*
         int structureScore = containsAny(answer, List.of("首先", "其次", "最后", "例如", "场景", "原因", "总结")) ? 10 : 0;
-        return Math.max(0, Math.min(100, 40 + lengthScore + referenceScore + structureScore));
-    }
-
+    */
     private long referenceHitCount(List<String> referencePoints, String answer) {
         String normalized = answer.toLowerCase(Locale.ROOT);
         return referencePoints.stream()
@@ -363,10 +364,6 @@ public class AiInterviewServiceImpl implements com.example.aiinterview.module.ai
                 .filter(StringUtils::hasText)
                 .filter(point -> !normalized.contains(point.toLowerCase(Locale.ROOT)))
                 .toList();
-    }
-
-    private boolean containsAny(String answer, List<String> keywords) {
-        return keywords.stream().anyMatch(answer::contains);
     }
 
     private EnterpriseScoreVO buildEnterpriseScore(int totalScore, List<AiInterviewQuestionResultVO> questionResults) {
