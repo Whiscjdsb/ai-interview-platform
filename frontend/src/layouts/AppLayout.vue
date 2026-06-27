@@ -11,6 +11,10 @@
           <el-icon><HomeFilled /></el-icon>
           <span>首页</span>
         </el-menu-item>
+        <el-menu-item index="/landing">
+          <el-icon><Connection /></el-icon>
+          <span>官网展示</span>
+        </el-menu-item>
         <el-menu-item index="/questions">
           <el-icon><Reading /></el-icon>
           <span>题库</span>
@@ -81,6 +85,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   ChatDotRound,
   Clock,
+  Connection,
   HomeFilled,
   OfficeBuilding,
   Reading,

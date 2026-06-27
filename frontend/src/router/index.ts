@@ -10,6 +10,11 @@ const router = createRouter({
       redirect: '/dashboard'
     },
     {
+      path: '/landing',
+      name: 'landing',
+      component: () => import('@/views/landing/LandingView.vue')
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/auth/LoginView.vue'),
