@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS ai_interview_session;
+DROP TABLE IF EXISTS interview_template;
 DROP TABLE IF EXISTS ai_review_record;
 DROP TABLE IF EXISTS daily_learning_record;
 DROP TABLE IF EXISTS user_wrong_question;
