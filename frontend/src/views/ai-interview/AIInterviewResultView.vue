@@ -1,130 +1,229 @@
 <template>
-  <div>
-    <section v-if="!pageReady" class="result-panel panel">
+  <div class="result-page">
+    <section v-if="!pageReady" class="report-shell panel">
       <el-skeleton animated>
         <template #template>
-          <div class="result-skeleton-hero">
-            <el-skeleton-item variant="h1" style="width: 38%" />
-            <el-skeleton-item variant="circle" style="width: 120px; height: 120px" />
+          <div class="report-skeleton-hero">
+            <div>
+              <el-skeleton-item variant="text" style="width: 140px" />
+              <el-skeleton-item variant="h1" style="width: 360px; margin-top: 14px" />
+              <el-skeleton-item variant="text" style="width: 520px; margin-top: 14px" />
+            </div>
+            <el-skeleton-item variant="circle" style="width: 140px; height: 140px" />
           </div>
-          <div class="result-skeleton-grid">
-            <el-skeleton-item v-for="item in 3" :key="item" variant="rect" style="height: 170px" />
+          <div class="report-skeleton-grid">
+            <el-skeleton-item v-for="item in 4" :key="item" variant="rect" style="height: 156px" />
           </div>
         </template>
       </el-skeleton>
     </section>
 
-    <section v-else-if="result" class="result-panel panel">
-      <div class="result-header">
+    <section v-else-if="result" class="report-shell">
+      <header class="report-hero panel">
+        <div class="report-hero__content">
+          <span class="report-eyebrow">AI Interview Report</span>
+          <h1>{{ result.position }} 面试分析报告</h1>
+          <p>
+            基于本场 AI 模拟面试的回答质量、追问表现和结构化反馈生成，适合复盘知识短板与下一轮练习重点。
+          </p>
+
+          <div class="report-meta">
+            <span>{{ difficultyText(result.difficulty) }}</span>
+            <span>{{ providerName }}</span>
+            <span>{{ completionTime }}</span>
+          </div>
+        </div>
+
+        <div class="report-hero__score" :class="scoreBandClass(displayScore)">
+          <div class="score-ring" :style="scoreRingStyle">
+            <div class="score-ring__inner">
+              <strong>{{ displayScore }}</strong>
+              <span>/ 100</span>
+            </div>
+          </div>
+          <div>
+            <span class="score-level">{{ displayLevel }}</span>
+            <p>{{ scoreDescription }}</p>
+          </div>
+        </div>
+      </header>
+
+      <div class="report-actions">
         <div>
-          <h1>{{ result.position }} 面试结果</h1>
-          <p>{{ difficultyText(result.difficulty) }} · {{ result.modelName }} · {{ formatInterviewTime(result.createTime) }}</p>
+          <strong>报告操作</strong>
+          <span>导出 PDF、生成分享链接，或重新开始一场面试</span>
         </div>
-        <div class="score-box" :class="scoreBandClass(displayScore)" :style="{ color: scoreBandColor(displayScore) }">
-          <strong>{{ displayScore }}</strong>
-          <span>{{ displayLevel }}</span>
+        <div class="report-actions__buttons">
+          <el-button :loading="shareLoading" type="warning" @click="createShareLink">
+            生成分享链接
+          </el-button>
+          <el-button :loading="pdfLoading" type="success" @click="downloadPdf">
+            下载 PDF 报告
+          </el-button>
+          <el-button @click="router.push('/ai-interview')">重新开始</el-button>
+          <el-button type="primary" @click="router.push('/dashboard')">返回首页</el-button>
         </div>
       </div>
 
-      <div class="result-layout">
-        <el-card shadow="never" class="score-card">
+      <div class="kpi-grid">
+        <section v-for="card in kpiCards" :key="card.label" class="kpi-card ai-hover-lift">
+          <span>{{ card.label }}</span>
+          <strong>{{ card.value }}</strong>
+          <p>{{ card.description }}</p>
+        </section>
+      </div>
+
+      <div class="report-grid">
+        <el-card shadow="never" class="score-card report-card">
           <template #header>
-            <div class="card-title">总分概览</div>
+            <div class="card-title">
+              <span>总分概览</span>
+              <el-tag :color="scoreBandColor(displayScore)" effect="dark">{{ displayLevel }}</el-tag>
+            </div>
           </template>
-          <el-progress
-            type="dashboard"
-            :percentage="displayScore"
-            :color="scoreBandColor(displayScore)"
-            :width="150"
-          />
-          <p class="score-summary">{{ result.summary || fallbackSummary }}</p>
+
+          <div class="score-overview">
+            <el-progress
+              type="dashboard"
+              :percentage="displayScore"
+              :color="scoreBandColor(displayScore)"
+              :width="168"
+            />
+            <p>{{ result.summary || fallbackSummary }}</p>
+          </div>
         </el-card>
 
-        <el-card shadow="never" class="radar-card">
+        <el-card shadow="never" class="radar-card report-card">
           <template #header>
-            <div class="card-title">能力雷达图</div>
+            <div class="card-title">
+              <span>能力雷达图</span>
+              <small>前端基于总分映射的演示模型</small>
+            </div>
           </template>
-          <div ref="radarChartRef" class="radar-chart" />
-          <p class="radar-note">雷达图将当前总分映射到 Java 基础、Spring Boot、数据库、系统设计和项目经验五个维度，用于快速判断复盘重点。</p>
+          <div v-if="displayScore > 0" ref="radarChartRef" class="radar-chart" />
+          <el-empty v-else description="暂无可用于生成雷达图的评分数据" :image-size="92" />
+          <p class="radar-note">
+            雷达图将总分映射到 Java 基础、Spring Boot、数据库、系统设计和项目经验五个维度，用于快速判断复盘优先级。
+          </p>
         </el-card>
       </div>
 
-      <el-card shadow="never" class="analysis-card">
-        <template #header>
-          <div class="card-title">AI 分析</div>
-        </template>
-
-        <div v-if="hasStructuredOrLegacyContent" class="analysis-grid">
-          <section class="analysis-section section-green">
-            <h3>优点</h3>
-            <ul v-if="strengths.length">
-              <li v-for="item in strengths" :key="item">{{ item }}</li>
-            </ul>
-            <el-empty v-else description="暂无优点分析" :image-size="72" />
-          </section>
-
-          <section class="analysis-section section-red">
-            <h3>不足</h3>
-            <ul v-if="weaknesses.length">
-              <li v-for="item in weaknesses" :key="item">{{ item }}</li>
-            </ul>
-            <el-empty v-else description="暂无不足分析" :image-size="72" />
-          </section>
-
-          <section class="analysis-section section-blue">
-            <h3>改进建议</h3>
-            <ul v-if="suggestions.length">
-              <li v-for="item in suggestions" :key="item">{{ item }}</li>
-            </ul>
-            <el-empty v-else description="暂无改进建议" :image-size="72" />
-          </section>
+      <section class="analysis-card panel">
+        <div class="section-heading">
+          <div>
+            <span class="report-eyebrow">AI Analysis</span>
+            <h2>分析摘要</h2>
+          </div>
+          <p>优先使用结构化结果，缺失时回退到原有字段或友好兜底文案。</p>
         </div>
 
-        <div v-if="referenceAnswer" class="reference-section">
-          <h3>参考答案</h3>
-          <pre>{{ referenceAnswer }}</pre>
+        <div class="analysis-grid">
+          <article
+            v-for="group in analysisGroups"
+            :key="group.title"
+            class="analysis-section"
+            :class="group.className"
+          >
+            <div class="analysis-section__header">
+              <span>{{ group.icon }}</span>
+              <h3>{{ group.title }}</h3>
+            </div>
+            <ul v-if="group.items.length">
+              <li v-for="item in group.items" :key="item">{{ item }}</li>
+            </ul>
+            <p v-else class="empty-copy">{{ group.emptyText }}</p>
+          </article>
+        </div>
+
+        <div class="reference-section">
+          <div class="reference-section__header">
+            <h3>参考答案 / 推荐复习方向</h3>
+            <span>{{ referenceAnswer ? '已生成' : '暂无结构化参考答案' }}</span>
+          </div>
+          <pre>{{ referenceAnswer || fallbackReferenceAnswer }}</pre>
         </div>
 
         <div v-if="showRawResponse" class="reference-section raw-section">
-          <h3>原始返回</h3>
+          <div class="reference-section__header">
+            <h3>原始 AI 返回</h3>
+            <span>结构化解析失败时保留</span>
+          </div>
           <pre>{{ rawResponse }}</pre>
         </div>
-      </el-card>
+      </section>
 
-      <div v-if="result.questionResults.length" class="question-results">
-        <h2>各题评分</h2>
-        <div v-for="item in result.questionResults" :key="item.questionNo" class="question-result">
-          <div class="question-result__header">
-            <h3>第 {{ item.questionNo }} 题：{{ item.question }}</h3>
-            <el-tag :color="scoreColor(item.score || 0)" effect="dark">{{ item.score ?? 0 }} 分</el-tag>
+      <section v-if="questionResults.length" class="question-results panel">
+        <div class="section-heading">
+          <div>
+            <span class="report-eyebrow">Question Review</span>
+            <h2>每题评分反馈</h2>
           </div>
-          <p>{{ item.review }}</p>
-          <el-collapse>
-            <el-collapse-item title="我的回答与建议" :name="String(item.questionNo)">
-              <el-descriptions border :column="1">
-                <el-descriptions-item label="我的回答">
-                  <pre class="plain-text">{{ item.answer || '未作答' }}</pre>
-                </el-descriptions-item>
-                <el-descriptions-item label="AI 回答建议">
-                  <pre class="plain-text">{{ item.suggestedAnswer }}</pre>
-                </el-descriptions-item>
-                <el-descriptions-item label="优点">{{ item.advantages.join('；') }}</el-descriptions-item>
-                <el-descriptions-item label="不足">{{ item.improvements.join('；') }}</el-descriptions-item>
-              </el-descriptions>
-            </el-collapse-item>
-          </el-collapse>
+          <p>按面试过程整理每道题的回答、评分和 AI 建议。</p>
         </div>
-      </div>
 
-      <div class="result-actions">
-        <el-button :loading="shareLoading" type="warning" @click="createShareLink">生成分享链接</el-button>
-        <el-button :loading="pdfLoading" type="success" @click="downloadPdf">下载PDF报告</el-button>
-        <el-button @click="router.push('/ai-interview')">重新开始</el-button>
-        <el-button type="primary" @click="router.push('/dashboard')">返回首页</el-button>
-      </div>
+        <div class="question-timeline">
+          <article v-for="item in questionResults" :key="item.questionNo" class="question-result">
+            <div class="question-result__marker">{{ item.questionNo }}</div>
+            <div class="question-result__body">
+              <div class="question-result__header">
+                <div>
+                  <span class="question-label">第 {{ item.questionNo }} 题</span>
+                  <h3>{{ item.question }}</h3>
+                </div>
+                <div class="question-score" :style="{ '--question-score-color': scoreBandColor(item.score || 0) }">
+                  <strong>{{ formatScore(item.score) }}</strong>
+                  <span>分</span>
+                </div>
+              </div>
+
+              <p class="question-review">{{ item.review || '暂无单题点评，建议结合参考答案继续复盘。' }}</p>
+
+              <el-collapse class="question-collapse">
+                <el-collapse-item title="查看回答与 AI 建议" :name="String(item.questionNo)">
+                  <div class="answer-grid">
+                    <section>
+                      <h4>我的回答</h4>
+                      <pre>{{ item.userAnswer || item.answer || '未作答' }}</pre>
+                    </section>
+                    <section>
+                      <h4>AI 建议 / 参考思路</h4>
+                      <pre>{{ item.suggestedAnswer || item.referenceAnswer || '暂无建议' }}</pre>
+                    </section>
+                  </div>
+
+                  <div class="mini-analysis-grid">
+                    <section>
+                      <h4>优点</h4>
+                      <ul v-if="item.advantages?.length">
+                        <li v-for="advantage in item.advantages" :key="advantage">{{ advantage }}</li>
+                      </ul>
+                      <p v-else>暂无优点分析</p>
+                    </section>
+                    <section>
+                      <h4>不足</h4>
+                      <ul v-if="item.improvements?.length">
+                        <li v-for="improvement in item.improvements" :key="improvement">{{ improvement }}</li>
+                      </ul>
+                      <p v-else>暂无不足分析</p>
+                    </section>
+                  </div>
+                </el-collapse-item>
+              </el-collapse>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section v-else class="empty-report panel">
+        <el-empty description="暂无单题评分数据">
+          <el-button type="primary" @click="router.push('/ai-interview')">重新开始一场面试</el-button>
+        </el-empty>
+      </section>
 
       <el-dialog v-model="shareDialogVisible" title="分享面试报告" width="520px">
-        <p class="share-hint">复制以下链接后，任何拥有链接的人都可以只读查看这份面试报告。</p>
+        <p class="share-hint">
+          复制以下链接后，拥有链接的人可以只读查看这份面试报告。链接不会暴露登录 Token 或后台管理数据。
+        </p>
         <el-input v-model="shareUrl" readonly>
           <template #append>
             <el-button @click="copyShareUrl">复制</el-button>
@@ -133,9 +232,11 @@
       </el-dialog>
     </section>
 
-    <el-empty v-else description="未找到面试结果">
-      <el-button type="primary" @click="router.push('/ai-interview')">重新开始</el-button>
-    </el-empty>
+    <section v-else class="empty-report panel">
+      <el-empty description="未找到面试结果">
+        <el-button type="primary" @click="router.push('/ai-interview')">重新开始</el-button>
+      </el-empty>
+    </section>
   </div>
 </template>
 
@@ -169,9 +270,17 @@ const pageReady = ref(false)
 let radarChart: echarts.ECharts | null = null
 
 const structuredResult = computed(() => result.value?.structuredResult || null)
+const questionResults = computed(() => result.value?.questionResults || [])
 const displayScore = computed(() => normalizeScore(structuredResult.value?.score ?? result.value?.totalScore ?? 0))
 const displayLevel = computed(() => scoreBandText(displayScore.value) || result.value?.level || scoreLevel(displayScore.value))
-const fallbackSummary = computed(() => `本次面试得分为 ${displayScore.value} 分，建议结合逐题点评继续复盘。`)
+const providerName = computed(() => result.value?.modelName || 'AI Provider')
+const completionTime = computed(() => formatInterviewTime(result.value?.createTime) || '刚刚完成')
+const fallbackSummary = computed(
+  () => `本次面试总分为 ${displayScore.value} 分，建议结合每题反馈继续复盘回答结构和关键技术点。`
+)
+const fallbackReferenceAnswer = computed(
+  () => '建议按照“核心概念、关键原理、实际场景、风险边界、项目经验”的结构重新组织答案。'
+)
 const rawResponse = computed(() => result.value?.rawResponse || '')
 const strengths = computed(() => safeList(structuredResult.value?.strengths, result.value?.advantages))
 const weaknesses = computed(() =>
@@ -182,12 +291,71 @@ const referenceAnswer = computed(() => {
   if (structuredResult.value?.referenceAnswer) {
     return structuredResult.value.referenceAnswer
   }
-  return result.value?.questionResults.find((item) => item.suggestedAnswer)?.suggestedAnswer || ''
+  return questionResults.value.find((item) => item.suggestedAnswer)?.suggestedAnswer || ''
 })
-const hasStructuredOrLegacyContent = computed(
-  () => strengths.value.length > 0 || weaknesses.value.length > 0 || suggestions.value.length > 0
-)
 const showRawResponse = computed(() => !structuredResult.value && Boolean(rawResponse.value))
+const scoreDescription = computed(() => {
+  const score = displayScore.value
+  if (score >= 90) {
+    return '表现优秀，回答完整度和表达结构都比较成熟。'
+  }
+  if (score >= 70) {
+    return '整体表现良好，建议继续补充底层原理和项目案例。'
+  }
+  if (score >= 40) {
+    return '基础方向可见，但回答深度和关键技术点还需要加强。'
+  }
+  return '当前表现较弱，建议先补齐核心概念，再进行专项练习。'
+})
+const scoreRingStyle = computed(() => ({
+  '--score-color': scoreBandColor(displayScore.value),
+  '--score-deg': `${displayScore.value * 3.6}deg`
+}))
+const kpiCards = computed(() => [
+  {
+    label: '单题反馈',
+    value: `${questionResults.value.length} 题`,
+    description: '覆盖本场面试中的逐题评分与复盘建议'
+  },
+  {
+    label: 'AI Provider',
+    value: providerName.value,
+    description: '保留模型来源，便于区分 DeepSeek / Mock 演示'
+  },
+  {
+    label: '报告状态',
+    value: structuredResult.value ? '结构化' : rawResponse.value ? '原始返回' : '本地结果',
+    description: '结构化结果优先展示，解析失败时安全回退'
+  },
+  {
+    label: '复盘重点',
+    value: suggestions.value[0] ? '已生成' : '待补充',
+    description: suggestions.value[0] || '建议从低分题和薄弱维度开始复盘'
+  }
+])
+const analysisGroups = computed(() => [
+  {
+    title: '优势总结',
+    icon: '✓',
+    items: strengths.value,
+    emptyText: '暂无优势总结，可结合每题点评继续复盘。',
+    className: 'analysis-section--green'
+  },
+  {
+    title: '主要不足',
+    icon: '!',
+    items: weaknesses.value,
+    emptyText: '暂无不足分析，建议关注低分题。',
+    className: 'analysis-section--red'
+  },
+  {
+    title: '改进建议',
+    icon: '→',
+    items: suggestions.value,
+    emptyText: '暂无改进建议，可以先按题目参考思路整理答案。',
+    className: 'analysis-section--blue'
+  }
+])
 
 onMounted(async () => {
   result.value = getInterviewResult(route.params.id as string)
@@ -203,7 +371,7 @@ onUnmounted(() => {
 })
 
 function renderRadarChart() {
-  if (!radarChartRef.value || !result.value) {
+  if (!radarChartRef.value || !result.value || displayScore.value <= 0) {
     return
   }
   radarChart = radarChart || echarts.init(radarChartRef.value)
@@ -247,6 +415,10 @@ function safeList(primary?: string[], fallback?: string[]) {
 
 function normalizeScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(value || 0)))
+}
+
+function formatScore(value: number | null | undefined) {
+  return normalizeScore(value ?? 0)
 }
 
 function scoreBandColor(score: number) {
@@ -296,8 +468,9 @@ async function downloadPdf() {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
+    ElMessage.success('PDF 报告已开始下载')
   } catch {
-    ElMessage.error('PDF报告下载失败，请确认面试已提交并稍后重试')
+    ElMessage.error('PDF 报告下载失败，请确认面试已提交并稍后重试')
   } finally {
     pdfLoading.value = false
   }
@@ -312,6 +485,7 @@ async function createShareLink() {
     const response = await createInterviewShareLink(result.value.id)
     shareUrl.value = toFrontendShareUrl(response.shareUrl)
     shareDialogVisible.value = true
+    ElMessage.success('分享链接已生成')
   } catch {
     ElMessage.error('生成分享链接失败，请确认面试已提交并稍后重试')
   } finally {
@@ -341,208 +515,408 @@ function toFrontendShareUrl(url: string) {
 </script>
 
 <style scoped>
-.result-panel {
-  padding: 22px;
+.result-page {
+  padding-bottom: var(--ai-space-2);
 }
 
-.result-skeleton-hero {
+.report-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ai-space-2);
+}
+
+.panel {
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  border-radius: var(--ai-radius-lg);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--ai-shadow-soft);
+}
+
+.report-skeleton-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: var(--ai-space-3);
+  padding: var(--ai-space-3);
 }
 
-.result-skeleton-grid {
+.report-skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ai-space-2);
+  padding: 0 var(--ai-space-3) var(--ai-space-3);
 }
 
-.result-header {
+.report-hero {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
-  border: 1px solid #e5edf5;
-  border-radius: 18px;
+  gap: var(--ai-space-3);
+  overflow: hidden;
+  padding: var(--ai-space-3);
   background:
-    radial-gradient(circle at 86% 22%, rgba(124, 58, 237, 0.18), transparent 26%),
-    linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #eef6ff 100%);
-  padding: 20px;
-  box-shadow: 0 16px 42px rgba(37, 99, 235, 0.1);
+    radial-gradient(circle at 88% 16%, rgba(124, 58, 237, 0.2), transparent 26%),
+    radial-gradient(circle at 12% 18%, rgba(37, 99, 235, 0.14), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #eef6ff 100%);
 }
 
-.result-header h1 {
-  margin: 0 0 8px;
-  font-size: 24px;
+.report-hero__content {
+  max-width: 760px;
 }
 
-.result-header p {
+.report-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ai-radius-pill);
+  background: rgba(37, 99, 235, 0.1);
+  padding: 5px 10px;
+  color: var(--ai-color-primary);
+  font-size: var(--ai-font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.report-hero h1 {
+  margin: 14px 0 10px;
+  font-size: 30px;
+}
+
+.report-hero p {
   margin: 0;
-  color: #62748e;
+  color: var(--ai-text-secondary);
+  line-height: 1.8;
 }
 
-.score-box {
-  min-width: 110px;
-  text-align: right;
-  border: 1px solid #e5edf5;
-  border-radius: 18px;
+.report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--ai-space-2);
+}
+
+.report-meta span {
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  border-radius: var(--ai-radius-pill);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 7px 12px;
+  color: var(--ai-text-secondary);
+  font-size: var(--ai-font-size-sm);
+  font-weight: 700;
+}
+
+.report-hero__score {
+  display: flex;
+  align-items: center;
+  gap: var(--ai-space-2);
+  min-width: 320px;
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  border-radius: var(--ai-radius-lg);
+  background: rgba(255, 255, 255, 0.86);
+  padding: var(--ai-space-2);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.score-ring {
+  display: grid;
+  width: 132px;
+  height: 132px;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--score-color) var(--score-deg), #e5edf5 0deg);
+}
+
+.score-ring__inner {
+  display: grid;
+  width: 96px;
+  height: 96px;
+  place-items: center;
+  border-radius: 50%;
   background: #ffffff;
-  padding: 14px 18px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-}
-
-.score-box strong {
-  display: block;
-  font-size: 48px;
   line-height: 1;
 }
 
-.score-box span {
-  display: block;
-  margin-top: 6px;
+.score-ring__inner strong {
+  font-size: 34px;
+  font-weight: 850;
+}
+
+.score-ring__inner span {
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-xs);
   font-weight: 700;
+}
+
+.score-level {
+  display: block;
+  color: var(--score-color);
+  font-size: var(--ai-font-size-xl);
+  font-weight: 850;
+}
+
+.report-hero__score p {
+  margin-top: 8px;
+  font-size: var(--ai-font-size-sm);
 }
 
 .score-band--excellent {
-  border-color: #bbf7d0;
+  --score-color: var(--ai-color-success);
 }
 
 .score-band--good {
-  border-color: #bfdbfe;
+  --score-color: var(--ai-color-primary);
 }
 
 .score-band--medium {
-  border-color: #fed7aa;
+  --score-color: var(--ai-color-warning);
 }
 
 .score-band--weak {
-  border-color: #fecaca;
+  --score-color: var(--ai-color-danger);
 }
 
-.result-layout {
+.report-actions {
+  position: sticky;
+  top: 12px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ai-space-2);
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  border-radius: var(--ai-radius-md);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px var(--ai-space-2);
+  box-shadow: var(--ai-shadow-card);
+  backdrop-filter: blur(14px);
+}
+
+.report-actions strong,
+.report-actions span {
+  display: block;
+}
+
+.report-actions strong {
+  color: var(--ai-text-primary);
+}
+
+.report-actions span {
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-xs);
+}
+
+.report-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.kpi-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ai-space-2);
 }
 
-.score-card,
-.radar-card,
-.analysis-card {
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+.kpi-card {
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  border-radius: var(--ai-radius-md);
+  background: var(--ai-bg-card);
+  padding: var(--ai-space-2);
+  box-shadow: var(--ai-shadow-soft);
 }
 
-.score-card :deep(.el-card__body) {
+.kpi-card span {
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-xs);
+  font-weight: 800;
+}
+
+.kpi-card strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--ai-text-primary);
+  font-size: var(--ai-font-size-xl);
+}
+
+.kpi-card p {
+  margin: 8px 0 0;
+  color: var(--ai-text-secondary);
+  font-size: var(--ai-font-size-sm);
+  line-height: 1.7;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: var(--ai-space-2);
+}
+
+.report-card {
+  border-radius: var(--ai-radius-md);
+  box-shadow: var(--ai-shadow-soft);
+}
+
+.card-title,
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ai-space-2);
+}
+
+.card-title span {
+  font-size: var(--ai-font-size-md);
+  font-weight: 800;
+}
+
+.card-title small {
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-xs);
+}
+
+.score-overview {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #102a43;
-}
-
-.score-summary {
-  margin: 0;
-  color: #486581;
-  line-height: 1.7;
+  gap: var(--ai-space-2);
   text-align: center;
 }
 
+.score-overview p {
+  margin: 0;
+  color: var(--ai-text-secondary);
+  line-height: 1.8;
+}
+
 .radar-chart {
-  height: 280px;
+  height: 300px;
 }
 
 .radar-note {
   margin: 0 0 4px;
-  color: #62748e;
-  font-size: 13px;
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-sm);
   line-height: 1.7;
 }
 
-.analysis-card {
-  margin-bottom: 18px;
+.analysis-card,
+.question-results,
+.empty-report {
+  padding: var(--ai-space-3);
+}
+
+.section-heading {
+  margin-bottom: var(--ai-space-2);
+}
+
+.section-heading h2 {
+  margin: 8px 0 0;
+}
+
+.section-heading p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--ai-text-muted);
+  line-height: 1.7;
 }
 
 .analysis-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--ai-space-2);
 }
 
 .analysis-section {
-  border: 1px solid #d9e2ec;
-  border-radius: 16px;
-  padding: 16px;
+  border: 1px solid var(--ai-border-soft);
+  border-radius: var(--ai-radius-md);
+  padding: var(--ai-space-2);
   background: #ffffff;
-  min-height: 150px;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+  min-height: 170px;
 }
 
-.analysis-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+.analysis-section--green {
+  border-color: #bbf7d0;
+  background: linear-gradient(180deg, #f0fdf4, #ffffff);
+}
+
+.analysis-section--red {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fef2f2, #ffffff);
+}
+
+.analysis-section--blue {
+  border-color: #bfdbfe;
+  background: linear-gradient(180deg, #eff6ff, #ffffff);
+}
+
+.analysis-section__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.analysis-section__header span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: var(--ai-radius-pill);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ai-color-primary);
+  font-weight: 900;
 }
 
 .analysis-section h3,
 .reference-section h3,
-.question-results h2,
-.question-result h3 {
+.question-result h3,
+.answer-grid h4,
+.mini-analysis-grid h4 {
   margin: 0;
 }
 
-.analysis-section h3 {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.75);
-  padding: 5px 10px;
-  font-size: 15px;
-}
-
-.analysis-section ul {
+.analysis-section ul,
+.mini-analysis-grid ul {
   margin: 12px 0 0;
   padding-left: 18px;
-  color: #486581;
+  color: var(--ai-text-secondary);
   line-height: 1.8;
 }
 
-.section-green {
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-}
-
-.section-red {
-  border-color: #fecaca;
-  background: #fef2f2;
-}
-
-.section-blue {
-  border-color: #bfdbfe;
-  background: #eff6ff;
+.empty-copy,
+.mini-analysis-grid p {
+  margin: 12px 0 0;
+  color: var(--ai-text-muted);
+  line-height: 1.7;
 }
 
 .reference-section {
-  margin-top: 14px;
+  margin-top: var(--ai-space-2);
+  border: 1px solid var(--ai-border-soft);
+  border-radius: var(--ai-radius-md);
+  background: var(--ai-bg-card-muted);
+  padding: var(--ai-space-2);
 }
 
-.reference-section pre {
-  margin: 10px 0 0;
-  border-radius: 14px;
-  background: #f4f6f8;
-  padding: 14px;
-  color: #334e68;
+.reference-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ai-space-2);
+}
+
+.reference-section__header span {
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-xs);
+  font-weight: 700;
+}
+
+.reference-section pre,
+.answer-grid pre {
+  margin: 12px 0 0;
+  color: var(--ai-text-secondary);
   white-space: pre-wrap;
   word-break: break-word;
-  line-height: 1.7;
+  line-height: 1.75;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
@@ -551,153 +925,204 @@ function toFrontendShareUrl(url: string) {
   overflow: auto;
 }
 
-.question-results h2 {
-  margin-bottom: 12px;
-  font-size: 20px;
-}
-
-.question-results {
+.question-timeline {
   position: relative;
-  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ai-space-2);
+  padding-left: 24px;
 }
 
-.question-results::before {
+.question-timeline::before {
   content: '';
   position: absolute;
-  left: 4px;
-  top: 36px;
-  bottom: 6px;
+  left: 11px;
+  top: 12px;
+  bottom: 12px;
   width: 2px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #bfdbfe, #ddd6fe);
+  border-radius: var(--ai-radius-pill);
+  background: linear-gradient(180deg, var(--ai-color-primary-subtle), #ddd6fe);
 }
 
 .question-result {
   position: relative;
-  border: 1px solid #d9e2ec;
-  border-radius: 16px;
-  background: #ffffff;
-  padding: 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ai-space-2);
 }
 
-.question-result::before {
-  content: '';
-  position: absolute;
-  left: -22px;
-  top: 22px;
-  width: 10px;
-  height: 10px;
+.question-result__marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
   border: 3px solid #ffffff;
-  border-radius: 999px;
-  background: #2563eb;
-  box-shadow: 0 0 0 2px #bfdbfe;
+  border-radius: var(--ai-radius-pill);
+  background: linear-gradient(135deg, var(--ai-color-primary), var(--ai-color-accent));
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 0 0 3px var(--ai-color-primary-subtle);
 }
 
-.question-result:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
-}
-
-.question-result + .question-result {
-  margin-top: 12px;
+.question-result__body {
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  border-radius: var(--ai-radius-md);
+  background: #ffffff;
+  padding: var(--ai-space-2);
+  box-shadow: var(--ai-shadow-soft);
 }
 
 .question-result__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: var(--ai-space-2);
 }
 
-.question-result__header :deep(.el-tag) {
-  border: 0;
-  border-radius: 999px;
-  color: #ffffff;
-  font-weight: 700;
+.question-label {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--ai-color-primary);
+  font-size: var(--ai-font-size-xs);
+  font-weight: 850;
+}
+
+.question-result h3 {
+  line-height: 1.5;
 }
 
 .question-score {
-  min-width: 68px;
-  border: 1px solid #d9e2ec;
-  border-radius: 8px;
-  background: #f8fafc;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 72px;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--question-score-color), white 68%);
+  border-radius: var(--ai-radius-sm);
+  background: color-mix(in srgb, var(--question-score-color), white 90%);
   padding: 8px 10px;
-  text-align: center;
-}
-
-.question-score strong,
-.question-score span {
-  display: block;
+  color: var(--question-score-color);
 }
 
 .question-score strong {
-  font-size: 20px;
+  font-size: 24px;
   line-height: 1;
 }
 
 .question-score span {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #62748e;
+  font-size: var(--ai-font-size-xs);
+  font-weight: 800;
 }
 
-.question-result p {
-  color: #486581;
-  line-height: 1.7;
+.question-review {
+  margin: 12px 0;
+  color: var(--ai-text-secondary);
+  line-height: 1.8;
 }
 
-.plain-text {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: inherit;
+.question-collapse {
+  border-top: 1px solid var(--ai-border-soft);
+  border-bottom: 0;
 }
 
-.result-actions {
-  position: sticky;
-  bottom: 14px;
-  z-index: 5;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-  border: 1px solid rgba(217, 226, 236, 0.88);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 12px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(12px);
+.question-collapse :deep(.el-collapse-item__header) {
+  color: var(--ai-text-primary);
+  font-weight: 750;
+}
+
+.answer-grid,
+.mini-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ai-space-2);
+}
+
+.answer-grid section,
+.mini-analysis-grid section {
+  border: 1px solid var(--ai-border-soft);
+  border-radius: var(--ai-radius-sm);
+  background: var(--ai-bg-card-muted);
+  padding: var(--ai-space-2);
+}
+
+.mini-analysis-grid {
+  margin-top: var(--ai-space-2);
 }
 
 .share-hint {
   margin: 0 0 12px;
-  color: #62748e;
-  line-height: 1.6;
+  color: var(--ai-text-muted);
+  line-height: 1.7;
 }
 
-@media (max-width: 920px) {
-  .result-layout,
-  .result-skeleton-grid,
-  .analysis-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .result-header,
-  .question-result__header,
-  .result-actions {
+@media (max-width: 1180px) {
+  .report-hero,
+  .report-actions,
+  .section-heading {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .score-box {
-    text-align: left;
+  .report-hero__score {
+    min-width: 0;
+  }
+
+  .kpi-grid,
+  .report-skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-grid,
+  .analysis-grid,
+  .answer-grid,
+  .mini-analysis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-actions__buttons {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .report-hero,
+  .analysis-card,
+  .question-results,
+  .empty-report {
+    padding: var(--ai-space-2);
+  }
+
+  .report-hero__score,
+  .question-result__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .score-ring {
+    width: 116px;
+    height: 116px;
+  }
+
+  .score-ring__inner {
+    width: 84px;
+    height: 84px;
+  }
+
+  .kpi-grid,
+  .report-skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-actions {
+    position: static;
+  }
+
+  .report-actions__buttons .el-button {
+    width: 100%;
+    margin-left: 0;
   }
 }
 </style>

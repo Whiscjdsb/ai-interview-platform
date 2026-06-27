@@ -37,13 +37,13 @@ export function scoreLevel(score: number) {
   if (score >= 90) {
     return '优秀'
   }
-  if (score >= 80) {
+  if (score >= 70) {
     return '良好'
   }
-  if (score >= 60) {
-    return '可提升'
+  if (score >= 40) {
+    return '中等'
   }
-  return '需要加强'
+  return '较弱'
 }
 
 export function formatInterviewTime(value?: string) {
@@ -118,7 +118,7 @@ export function buildLocalInterviewResult(
     summary: `本次 ${interview.position} 模拟面试整体表现为「${scoreLevel(totalScore)}」，建议继续强化表达结构和关键原理说明。`,
     advantages: [
       '能够完成整场面试作答',
-      '多数回答能围绕题目主题展开',
+      '多数回答能够围绕题目主题展开',
       `已覆盖 ${questionResults.filter((item) => item.answer).length} 道题的回答`
     ],
     disadvantages: [
@@ -133,7 +133,7 @@ export function buildLocalInterviewResult(
     suggestions: [
       '复盘低分题并重新组织答案',
       `针对 ${difficultyText(interview.difficulty)} 难度题目准备 3 到 5 个项目案例`,
-      '使用答题历史和错题本持续跟踪薄弱知识点'
+      '使用答题历史和错题本持续追踪薄弱知识点'
     ],
     questionResults,
     modelName: interview.modelName || 'LOCAL-MOCK',
@@ -160,7 +160,7 @@ function scoreAnswer(answer: string, question: InterviewQuestion) {
 
 function buildQuestionReview(score: number, question: InterviewQuestion) {
   if (score >= 85) {
-    return `回答较完整，能覆盖 ${question.category} 的核心点，并具备继续追问的基础。`
+    return `回答较完整，能够覆盖 ${question.category} 的核心点，并具备继续追问的基础。`
   }
   if (score >= 70) {
     return `回答方向正确，但对 ${question.category} 的关键机制还可以补充更多细节。`
@@ -202,7 +202,7 @@ export function answersToPayload(questions: InterviewQuestion[], answers: Record
 }
 
 export const radarIndicators = [
-  { name: 'Java基础', max: 100 },
+  { name: 'Java 基础', max: 100 },
   { name: 'Spring Boot', max: 100 },
   { name: '数据库', max: 100 },
   { name: '系统设计', max: 100 },
