@@ -44,7 +44,85 @@
           </div>
         </div>
 
-        <aside class="hero-demo-card fade-up">
+        <aside class="hero-demo-card hero-demo-card--video fade-up">
+          <div class="landing-demo-video">
+            <div class="demo-video-frame">
+              <div class="demo-video-topbar">
+                <div class="window-dots">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <strong>AI Interview Demo</strong>
+                <span class="demo-live-badge">LIVE</span>
+              </div>
+
+              <div class="demo-video-screen">
+                <div class="demo-screen-header">
+                  <span>AI 面试中</span>
+                  <strong>Java 后端开发 / MEDIUM</strong>
+                </div>
+
+                <div class="demo-flow">
+                  <div class="demo-scenes" aria-label="AI 面试产品演示流程">
+                    <section class="demo-scene demo-scene--one">
+                      <span>Step 1 · AI 生成面试题</span>
+                      <p>请说明 Spring Boot 自动配置的核心原理。</p>
+                      <div class="typing-dots" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </div>
+                    </section>
+                    <section class="demo-scene demo-scene--two">
+                      <span>Step 2 · 用户输入回答</span>
+                      <p>通过 starter、条件注解和自动配置类减少手动配置。</p>
+                      <div class="answer-line" />
+                    </section>
+                    <section class="demo-scene demo-scene--three">
+                      <span>Step 3 · AI 多轮追问</span>
+                      <p>如果 Bean 没有生效，你会如何排查加载链路？</p>
+                      <div class="typing-dots" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </div>
+                    </section>
+                    <section class="demo-scene demo-scene--four">
+                      <span>Step 4 · ScoreEngine 智能评分</span>
+                      <p>最终得分 82，回答方向正确，建议补充源码流程。</p>
+                      <strong>82</strong>
+                    </section>
+                    <section class="demo-scene demo-scene--five">
+                      <span>Step 5 · 生成 PDF 报告 / 分享链接</span>
+                      <p>沉淀面试报告，支持导出 PDF 和公开只读分享。</p>
+                      <div class="report-chips">
+                        <em>PDF Report</em>
+                        <em>Share Link</em>
+                      </div>
+                    </section>
+                  </div>
+
+                  <div class="demo-step-rail">
+                    <span v-for="step in 5" :key="step" :class="`demo-step-dot demo-step-dot--${step}`">
+                      {{ step }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="demo-video-footer">
+                <span class="demo-play-dot" />
+                <div class="demo-progress">
+                  <span />
+                </div>
+                <strong>00:42 / 01:20</strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <aside class="hero-demo-card hero-demo-card--legacy fade-up">
           <div class="demo-window">
             <div class="demo-window__top">
               <span />
@@ -506,6 +584,366 @@ main {
 
 .hero-demo-card {
   animation: floatPanel 5s ease-in-out infinite;
+}
+
+.hero-demo-card--legacy {
+  display: none;
+}
+
+.landing-demo-video {
+  position: relative;
+  border-radius: 30px;
+  padding: 1px;
+  background:
+    linear-gradient(135deg, rgba(96, 165, 250, 0.9), rgba(124, 58, 237, 0.74)),
+    rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 34px 90px rgba(37, 99, 235, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
+.landing-demo-video::before {
+  content: '';
+  position: absolute;
+  inset: -28px;
+  z-index: -1;
+  border-radius: 38px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.3), transparent 32%),
+    radial-gradient(circle at 82% 24%, rgba(124, 58, 237, 0.28), transparent 34%);
+  filter: blur(12px);
+}
+
+.demo-video-frame {
+  overflow: hidden;
+  border-radius: 29px;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(124, 58, 237, 0.28), transparent 28%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.88));
+  color: #ffffff;
+  backdrop-filter: blur(18px);
+}
+
+.demo-video-topbar,
+.demo-video-footer,
+.demo-screen-header,
+.demo-score-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.demo-video-topbar {
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 13px 16px;
+}
+
+.window-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.window-dots span,
+.demo-play-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.window-dots span:nth-child(1) {
+  background: #fb7185;
+}
+
+.window-dots span:nth-child(2) {
+  background: #fbbf24;
+}
+
+.window-dots span:nth-child(3) {
+  background: #34d399;
+}
+
+.demo-video-topbar strong,
+.demo-video-footer strong {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--ai-font-size-xs);
+}
+
+.demo-live-badge {
+  border: 1px solid rgba(96, 165, 250, 0.36);
+  border-radius: var(--ai-radius-pill);
+  background: rgba(37, 99, 235, 0.2);
+  padding: 4px 8px;
+  color: #bfdbfe;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.demo-video-screen {
+  padding: var(--ai-space-2);
+}
+
+.demo-screen-header {
+  justify-content: space-between;
+  margin-bottom: var(--ai-space-2);
+}
+
+.demo-screen-header span {
+  border-radius: var(--ai-radius-pill);
+  background: rgba(37, 99, 235, 0.24);
+  padding: 6px 10px;
+  color: #bfdbfe;
+  font-size: var(--ai-font-size-xs);
+  font-weight: 850;
+}
+
+.demo-screen-header strong {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--ai-font-size-xs);
+}
+
+.demo-flow {
+  position: relative;
+  display: grid;
+  gap: 14px;
+}
+
+.demo-scenes {
+  position: relative;
+  min-height: 236px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 76% 20%, rgba(124, 58, 237, 0.2), transparent 34%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.demo-scenes::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 18%, rgba(255, 255, 255, 0.08) 46%, transparent 70%);
+  transform: translateX(-120%);
+  animation: demoScan 10s ease-in-out infinite;
+}
+
+.demo-scene {
+  position: absolute;
+  inset: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.38);
+  padding: var(--ai-space-2);
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  animation: demoScene 15s ease-in-out infinite;
+}
+
+.demo-scene--two {
+  align-items: flex-end;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.62), rgba(124, 58, 237, 0.42));
+  animation-delay: 3s;
+}
+
+.demo-scene--three {
+  animation-delay: 6s;
+}
+
+.demo-scene--four {
+  background:
+    radial-gradient(circle at 82% 30%, rgba(34, 197, 94, 0.16), transparent 36%),
+    rgba(255, 255, 255, 0.09);
+  animation-delay: 9s;
+}
+
+.demo-scene--five {
+  background:
+    radial-gradient(circle at 70% 24%, rgba(96, 165, 250, 0.2), transparent 38%),
+    rgba(255, 255, 255, 0.09);
+  animation-delay: 12s;
+}
+
+.demo-scene span {
+  color: #bfdbfe;
+  font-size: var(--ai-font-size-xs);
+  font-weight: 850;
+}
+
+.demo-scene p {
+  max-width: 92%;
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.demo-scene strong {
+  margin-top: 12px;
+  color: #86efac;
+  font-size: 54px;
+  line-height: 1;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.typing-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #93c5fd;
+  animation: typingDot 1.2s ease-in-out infinite;
+}
+
+.typing-dots i:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.typing-dots i:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+.answer-line {
+  width: 72%;
+  height: 8px;
+  margin-top: 16px;
+  border-radius: var(--ai-radius-pill);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.8), rgba(191, 219, 254, 0.32));
+}
+
+.report-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.report-chips em {
+  border: 1px solid rgba(191, 219, 254, 0.28);
+  border-radius: var(--ai-radius-pill);
+  background: rgba(37, 99, 235, 0.16);
+  padding: 7px 10px;
+  color: #dbeafe;
+  font-size: var(--ai-font-size-xs);
+  font-style: normal;
+  font-weight: 850;
+}
+
+.demo-step-rail {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.demo-step-dot {
+  display: grid;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--ai-radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: var(--ai-font-size-xs);
+  font-weight: 900;
+  animation: demoStepDot 15s ease-in-out infinite;
+}
+
+.demo-step-dot--2 {
+  animation-delay: 3s;
+}
+
+.demo-step-dot--3 {
+  animation-delay: 6s;
+}
+
+.demo-step-dot--4 {
+  animation-delay: 9s;
+}
+
+.demo-step-dot--5 {
+  animation-delay: 12s;
+}
+
+.demo-step-card {
+  max-width: 88%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.09);
+  padding: 13px 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.demo-step-card--user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.88), rgba(124, 58, 237, 0.82));
+}
+
+.demo-step-card span,
+.demo-score-panel span {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: var(--ai-font-size-xs);
+  font-weight: 850;
+}
+
+.demo-step-card p,
+.demo-score-panel p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.65;
+}
+
+.demo-score-panel {
+  margin-top: var(--ai-space-2);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: var(--ai-space-2);
+}
+
+.demo-score-panel > div {
+  min-width: 86px;
+}
+
+.demo-score-panel strong {
+  display: block;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.demo-video-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 13px 16px;
+}
+
+.demo-play-dot {
+  background: #60a5fa;
+  box-shadow: 0 0 18px rgba(96, 165, 250, 0.72);
+}
+
+.demo-progress {
+  flex: 1;
+  height: 7px;
+  overflow: hidden;
+  border-radius: var(--ai-radius-pill);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.demo-progress span {
+  display: block;
+  width: 58%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
 }
 
 .demo-window {
