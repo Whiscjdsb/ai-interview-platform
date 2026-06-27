@@ -1,377 +1,378 @@
-# ai-interview-platform-backend
+# AI Interview Platform
 
-AI 面试刷题平台后端项目。当前已实现基础工程、用户认证、JWT 鉴权、题库核心模块、管理员题目管理、用户答题、自动判题、学习统计、AI 面试助手 Mock 模块，以及管理员用户管理和数据统计看板接口。
+AI Interview Platform 是一个面向 Java 后端学习与面试训练的全栈项目，包含题库刷题、自动判题、收藏错题、学习统计、AI 面试助手、PDF 报告、公开分享、成长分析和管理员后台等能力。
 
-## 当前已完成内容
+项目适合作为 GitHub 展示、简历项目和面试讲解材料。后端以 Spring Boot 3 为核心，前端使用 Vue 3 + TypeScript，AI 能力支持 Mock 与 DeepSeek 双 Provider，并通过统一 `ScoreEngine` 保证评分入口一致。
 
-- Spring Boot 3 + Java 17 + Maven 项目结构
-- MySQL 8、Redis 7、MyBatis-Plus、Lombok、SpringDoc OpenAPI 配置
-- 用户注册、登录、当前用户信息接口
-- 无状态 JWT 鉴权与统一 JSON 错误返回
-- 题目、标签、题目标签关系管理
-- 匿名题库分页查询、题目详情、标签列表
-- 管理员题目和标签增删改
-- 用户提交答案、客观题自动判题
+## 项目定位
+
+本项目不是简单 CRUD，而是一个“AI 面试训练平台”原型：
+
+- 面向学生和求职者：提供题库练习、错题复盘、AI 模拟面试和能力成长分析。
+- 面向管理员：提供用户、题库、答题记录、收藏记录、错题记录、AI 面试记录和统计看板。
+- 面向面试展示：体现后端分层、权限控制、AI 服务抽象、评分工程化、前后端联调和可观测性。
+
+## 核心功能
+
+用户端：
+
+- 用户注册、登录、JWT 鉴权、当前用户信息
+- 题库列表、题目详情、刷题提交
+- 单选、多选、判断题自动判题
 - 答题历史、收藏夹、错题本
-- 每日学习记录、用户学习概览、趋势、标签正确率和错题分析
-- AI 简答题点评、模拟面试题生成、薄弱知识点总结和 AI 历史记录
-- 管理员用户分页、用户详情、账号启停、角色维护
-- 管理员平台概览、趋势、热门题目、热门标签和用户排行
+- 用户学习概览、趋势、标签正确率、错题分析
+- AI 简答题点评
+- AI 模拟面试创建、会话、提交、结果展示
+- AI 多轮追问
+- AI 面试 PDF 报告导出
+- AI 面试报告公开分享
+- 用户 AI 面试成长分析
 
-## 交付文档
+管理员端：
 
-- [项目交付说明](docs/DELIVERY.md)
-- [演示脚本](docs/DEMO_SCRIPT.md)
-- [API 概览](docs/API_OVERVIEW.md)
-- [测试与构建报告](docs/TEST_REPORT.md)
+- 管理员后台首页统计
+- 用户管理、禁用用户、角色管理
+- 题库管理、题目新增、编辑、删除
+- 收藏记录、错题记录、答题记录管理
+- AI 面试记录管理与详情查看
+- 平台数据概览、趋势、热门题目、热门标签、用户排行
 
-## 启动依赖
+AI 与企业面试原型：
 
-```bash
+- Mock / DeepSeek Provider 切换
+- 企业面试官风格原型
+- 企业面试模板原型
+- 企业评分维度原型
+- 岗位匹配分析原型
+
+## 技术栈
+
+后端：
+
+- Java 17
+- Spring Boot 3
+- Spring Security
+- JWT
+- Maven
+- MyBatis-Plus
+- MySQL 8
+- Redis 7
+- Lombok
+- SpringDoc OpenAPI
+- Docker Compose
+- DeepSeek API
+- OpenPDF
+
+前端：
+
+- Vue 3
+- TypeScript
+- Vite
+- Element Plus
+- Vue Router
+- Pinia
+- Axios
+- ECharts
+- npm
+
+测试与工程：
+
+- Maven Wrapper
+- JUnit 5
+- Spring Boot Test
+- H2 test profile
+- vue-tsc
+- Vite production build
+
+## 系统亮点
+
+- 前后端完整闭环：认证、题库、答题、统计、AI 面试、管理后台均已打通。
+- AI Provider 抽象：通过 `AiServiceFactory` 支持 Mock、DeepSeek，并预留 OpenAI 扩展。
+- 统一评分引擎：通过 `ScoreEngine` 统一输出最终分数，避免评分逻辑散落。
+- 低质量回答防护：对“我不会”“不知道”“嗯”“对”等无效回答进行严格封顶。
+- 多轮 AI 追问：支持“用户回答 -> AI 追问 -> 用户继续回答”的模拟面试流程。
+- 报告能力：支持 AI 面试结果 PDF 导出和公开分享链接。
+- 成长分析：基于历史面试记录形成用户能力成长画像。
+- 管理后台：提供平台运营视角的数据和记录管理。
+- 可观测性：AI Provider 和评分链路均有关键日志，方便排查是否真实调用 DeepSeek。
+
+## AI Provider 架构说明
+
+AI 服务通过统一接口 `AiService` 抽象：
+
+```text
+AiService
+├── MockAiService
+├── DeepSeekAiService
+└── OpenAiService 预留
+```
+
+`AiServiceFactory` 负责选择当前 Provider。解析优先级：
+
+1. JVM 或配置属性 `app.ai.provider`
+2. 环境变量 `APP_AI_PROVIDER`
+3. 环境变量 `AI_PROVIDER`
+4. 全部为空时 fallback 为 `mock`
+
+启动时会打印：
+
+```text
+System final AI Provider = deepseek, source=...
+```
+
+调用时会打印：
+
+```text
+AI provider configured=deepseek, selectedService=DeepSeekAiService, modelName=deepseek-chat
+DeepSeek request sending: url=https://api.deepseek.com/chat/completions
+DeepSeek response received: status=200
+```
+
+## DeepSeek / Mock 切换说明
+
+使用 Mock：
+
+```powershell
+$env:APP_AI_PROVIDER="mock"
+```
+
+使用 DeepSeek：
+
+```powershell
+$env:APP_AI_PROVIDER="deepseek"
+$env:DEEPSEEK_API_KEY="your_deepseek_api_key"
+```
+
+IDEA 推荐配置：
+
+- `Run/Debug Configurations -> Environment variables`
+- 填入：
+
+```text
+APP_AI_PROVIDER=deepseek;DEEPSEEK_API_KEY=your_deepseek_api_key
+```
+
+也可以使用 VM options：
+
+```text
+-Dapp.ai.provider=deepseek
+```
+
+常见问题：
+
+- 如果日志显示 `System final AI Provider = mock`，说明 IDEA 没有读取到 `APP_AI_PROVIDER` 或 `app.ai.provider`。
+- 如果选择了 `deepseek` 但没有配置 `DEEPSEEK_API_KEY`，系统会记录原因并 fallback 到 `MockAiService`。
+- 如果在系统环境变量中新增变量后 IDEA 仍不生效，请重启 IDEA，或者直接写入 Run Configuration。
+
+## ScoreEngine 统一评分引擎
+
+评分逻辑统一收口到 `ScoreEngine.calculateScore(AiScoreContext context)`。
+
+输入上下文：
+
+- `deepseekScore`
+- `userAnswer`
+- `questionType`
+- `isFallback`
+- `referencePoints`
+
+统一输出：
+
+- 单题 AI 点评 `score`
+- `structuredResult.score`
+- 整场面试 `questionResults.score`
+- 整场面试 `totalScore`
+
+评分流转：
+
+```text
+DeepSeek / Mock / 本地面试评分
+        ↓ 生成原始分
+AiScoreContext
+        ↓
+ScoreEngine.calculateScore(...)
+        ↓
+最终 score
+        ↓
+PDF / 分享 / 成长分析继续读取最终分数
+```
+
+每次评分会输出：
+
+```text
+traceId, inputScore, finalScore, correctionReason
+```
+
+## 多轮 AI 追问
+
+多轮追问接口用于模拟真实面试官连续追问：
+
+```text
+POST /api/ai/interview/next-question
+```
+
+流程：
+
+```text
+当前题目 + 用户回答 + 历史对话
+        ↓
+DeepSeek 或 Mock 追问生成
+        ↓
+返回 nextQuestion 和 reason
+```
+
+Prompt 限制：
+
+- 每次只问一个问题
+- 不重复历史问题
+- 基于候选人的回答逐步深入
+- 保持严格 Java 面试官角色
+
+## PDF 导出 / 分享 / 成长分析
+
+PDF 导出：
+
+```text
+GET /api/ai/interview/{id}/export-pdf
+```
+
+包含总分、优点、不足、建议、参考答案、每题结果和追问记录。
+
+分享功能：
+
+```text
+POST /api/ai/interview/{id}/share
+GET /api/share/{token}
+```
+
+生成公开只读报告链接，不需要登录，不暴露敏感用户信息。
+
+成长分析：
+
+```text
+GET /api/ai/user/growth
+```
+
+基于历史 AI 面试记录输出平均分、趋势和能力维度。
+
+## 企业面试原型
+
+项目已预留企业级 AI 面试 SaaS 原型能力：
+
+- 多企业面试官类型：阿里、腾讯、字节、创业公司风格
+- 企业面试模板
+- 多维评分模型
+- 用户与岗位模型匹配分析
+- 前端企业面试入口
+
+该部分用于展示系统扩展方向，不影响普通 AI 面试主流程。
+
+## 项目运行方式
+
+启动 MySQL 和 Redis：
+
+```powershell
 docker compose up -d mysql redis
 ```
 
-首次启动 MySQL 容器时会自动执行 `sql/init.sql`。如需导入测试数据，可手动执行 `sql/test-data.sql`。
+后端环境变量示例：
 
-## 环境变量
-
-```bash
-SERVER_PORT=8080
-MYSQL_URL=jdbc:mysql://localhost:3306/ai_interview_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-MYSQL_USERNAME=root
-MYSQL_PASSWORD=root
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DATABASE=0
-JWT_SECRET=replace-with-a-long-random-secret
-JWT_EXPIRATION_SECONDS=86400
-APP_AI_PROVIDER=deepseek
-# Optional compatibility alias. Use either APP_AI_PROVIDER or AI_PROVIDER.
-AI_PROVIDER=
-AI_API_KEY=
-DEEPSEEK_API_KEY=replace-with-your-deepseek-key
-OPENAI_API_KEY=
+```powershell
+$env:SERVER_PORT="8080"
+$env:MYSQL_URL="jdbc:mysql://localhost:3306/ai_interview_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
+$env:MYSQL_USERNAME="root"
+$env:MYSQL_PASSWORD="root"
+$env:REDIS_HOST="localhost"
+$env:REDIS_PORT="6379"
+$env:JWT_SECRET="replace-with-a-long-random-secret"
+$env:APP_AI_PROVIDER="deepseek"
+$env:DEEPSEEK_API_KEY="your_deepseek_api_key"
 ```
 
-AI provider resolution:
+启动后端：
 
-1. `app.ai.provider` from JVM/system/application properties has highest priority.
-2. `APP_AI_PROVIDER` is supported for IDEA Run Configuration environment variables.
-3. `AI_PROVIDER` is also supported for compatibility.
-4. If all provider configs are blank, the backend falls back to `mock`.
-5. When `deepseek` is selected but `DEEPSEEK_API_KEY` is blank, the backend logs the reason and falls back to `MockAiService`.
-
-IDEA startup note:
-
-- In `Run/Debug Configurations -> Environment variables`, set `APP_AI_PROVIDER=deepseek;DEEPSEEK_API_KEY=your_key`.
-- Or set VM options: `-Dapp.ai.provider=deepseek`.
-- Do not rely on shell-only variables if IDEA was opened before the variables were created; restart IDEA or set them directly in the Run Configuration.
-- Startup logs should contain `System final AI Provider = deepseek` and request logs should show `selectedService=DeepSeekAiService`.
-
-## IDEA 启动步骤
-
-1. 使用 IDEA 打开项目根目录。
-2. Project SDK 选择 Java 17。
-3. 等待 Maven 依赖导入完成。
-4. 启动 MySQL 和 Redis。
-5. 运行 `com.example.aiinterview.AiInterviewApplication`。
-
-## 认证接口
-
-```text
-POST /api/auth/register
-POST /api/auth/login
-GET /api/auth/current
+```powershell
+.\mvnw.cmd spring-boot:run
 ```
 
-## 题库接口
+启动前端：
 
-匿名可访问：
-
-```text
-GET /api/questions
-GET /api/questions/{id}
-GET /api/tags
+```powershell
+cd frontend
+npm install
+npm run dev
 ```
 
-管理员接口：
+默认访问：
 
-```text
-GET /api/admin/questions/{id}
-POST /api/admin/questions
-PUT /api/admin/questions/{id}
-DELETE /api/admin/questions/{id}
-POST /api/admin/tags
-PUT /api/admin/tags/{id}
-DELETE /api/admin/tags/{id}
-```
+- 后端 API: `http://localhost:8080`
+- Swagger: `http://localhost:8080/swagger-ui.html`
+- 前端: `http://localhost:5173` 或 `http://localhost:5174`
 
-测试管理员账号由 `sql/test-data.sql` 提供：
-
-```text
-username: admin
-password: admin123
-role: ADMIN
-```
-
-## 答题、收藏、错题本接口
-
-以下接口均需要登录后携带 `Authorization: Bearer <token>`。
-
-```text
-POST /api/answers/submit
-GET /api/answers/history
-GET /api/answers/history/{id}
-
-POST /api/favorites/{questionId}
-DELETE /api/favorites/{questionId}
-GET /api/favorites
-
-GET /api/wrong-questions
-DELETE /api/wrong-questions/{questionId}
-```
-
-提交答案示例：
-
-```bash
-curl -X POST http://localhost:8080/api/answers/submit \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d "{\"questionId\":1,\"userAnswer\":\"A\",\"answerDuration\":45}"
-```
-
-多选题答案会忽略顺序和空格，例如 `A,B,C` 与 `C, A, B` 会判定一致。`SHORT_ANSWER` 和 `CODING` 暂不自动判题，会返回等待 AI 点评或人工评估的提示。
-
-收藏题目示例：
-
-```bash
-curl -X POST http://localhost:8080/api/favorites/1 \
-  -H "Authorization: Bearer <token>"
-```
-
-查看错题本示例：
-
-```bash
-curl "http://localhost:8080/api/wrong-questions?page=1&size=10&status=ACTIVE" \
-  -H "Authorization: Bearer <token>"
-```
-
-## 学习统计接口
-
-以下接口均需要登录后携带 `Authorization: Bearer <token>`。
-
-```text
-GET /api/statistics/user/overview
-GET /api/statistics/user/trend
-GET /api/statistics/user/tag-accuracy
-GET /api/statistics/user/wrong-analysis
-```
-
-学习趋势示例：
-
-```bash
-curl "http://localhost:8080/api/statistics/user/trend?days=7" \
-  -H "Authorization: Bearer <token>"
-```
-
-`/api/statistics/user/overview` 使用 Redis 缓存 10 分钟，缓存 key 格式为 `ai-interview:statistics:user:{userId}:overview`。用户提交答案、收藏题目、取消收藏、删除错题时会自动删除对应用户的概览缓存。
-
-## AI 面试助手接口
-
-以下接口均需要登录后携带 `Authorization: Bearer <token>`。当前默认使用 `MockAiService`，不会调用真实外部大模型接口。
-
-```text
-POST /api/ai/review-answer
-POST /api/ai/generate-interview
-POST /api/ai/weakness-summary
-GET /api/ai/history
-GET /api/ai/history/{id}
-DELETE /api/ai/history/{id}
-```
-
-简答题点评示例：
-
-```bash
-curl -X POST http://localhost:8080/api/ai/review-answer \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d "{\"questionId\":2,\"answer\":\"Spring Boot 自动配置依赖条件注解、Bean 定义和 classpath 匹配来减少样板配置。\"}"
-```
-
-模拟面试题生成示例：
-
-```bash
-curl -X POST http://localhost:8080/api/ai/generate-interview \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d "{\"position\":\"Java Backend Engineer\",\"difficulty\":\"MEDIUM\",\"focusTags\":[\"Java\",\"Spring Boot\",\"MySQL\",\"Redis\"],\"questionCount\":5}"
-```
-
-Mock 点评规则会综合答案长度、关键术语命中、题目标签相关性生成 0-100 分、优点、改进建议和参考组织方式。后续如需接入 DeepSeek 或 OpenAI，可通过 `AI_PROVIDER`、`DEEPSEEK_API_KEY`、`OPENAI_API_KEY` 配置扩展，当前不会发起真实外部调用。
-
-## 管理员用户管理接口
-
-以下接口均需要管理员登录后携带 `Authorization: Bearer <admin-token>`。
-
-```text
-GET /api/admin/users
-GET /api/admin/users/{id}
-PUT /api/admin/users/{id}/status
-PUT /api/admin/users/{id}/roles
-```
-
-禁用用户示例：
-
-```bash
-curl -X PUT http://localhost:8080/api/admin/users/100/status \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <admin-token>" \
-  -d "{\"status\":0}"
-```
-
-修改角色示例：
-
-```bash
-curl -X PUT http://localhost:8080/api/admin/users/100/roles \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <admin-token>" \
-  -d "{\"roleCodes\":[\"USER\"]}"
-```
-
-注意事项：管理员不能禁用自己，不能禁用最后一个 `ADMIN`，也不能移除自己或系统最后一个 `ADMIN` 角色。禁用后用户登录会失败，角色调整会在后续请求中按最新数据库角色生效。
-
-## 管理员统计接口
-
-以下接口均需要管理员登录。
-
-```text
-GET /api/admin/statistics/overview
-GET /api/admin/statistics/trend
-GET /api/admin/statistics/popular-questions
-GET /api/admin/statistics/popular-tags
-GET /api/admin/statistics/user-ranking
-```
-
-管理员统计缓存 5 分钟，缓存 key 包括：
-
-```text
-ai-interview:statistics:admin:overview
-ai-interview:statistics:admin:trend:{days}
-ai-interview:statistics:admin:popular-questions:{limit}
-ai-interview:statistics:admin:popular-tags:{limit}
-```
-
-用户注册、提交答案、题目或标签变更、AI 点评记录新增、用户状态或角色变更时会清理管理员统计缓存。
-
-## 管理员后台接口
-
-以下接口均需要管理员登录。
-
-```text
-GET /api/admin/dashboard
-GET /api/admin/users
-GET /api/admin/questions
-POST /api/admin/questions
-PUT /api/admin/questions/{id}
-DELETE /api/admin/questions/{id}
-GET /api/admin/favorites
-GET /api/admin/wrong-questions
-GET /api/admin/answers
-GET /api/admin/ai-interviews
-GET /api/admin/ai-interviews/{id}
-```
-
-## 质量验收命令
-
-环境要求：
-
-```text
-JDK 17+
-Node.js 18+
-```
-
-项目已补齐 Maven Wrapper，首次运行会自动下载 Maven 3.9.9。
+## 编译、测试与构建
 
 后端编译：
 
-```bash
-./mvnw -DskipTests compile
-```
-
-Windows：
-
 ```powershell
-mvnw.cmd -DskipTests compile
+.\mvnw.cmd -DskipTests compile
 ```
 
 后端测试：
 
-```bash
-./mvnw test
-```
-
-Windows：
-
 ```powershell
-mvnw.cmd test
+.\mvnw.cmd test
 ```
 
 前端构建：
-
-```bash
-cd frontend
-npm run build
-```
-
-Windows PowerShell：
 
 ```powershell
 cd frontend
 npm.cmd run build
 ```
 
-## 用户端测试流程
+当前已知验证结果见：
 
-1. 登录或注册普通用户。
-2. 查询题库列表并打开题目详情，确认未提前展示正确答案和解析。
-3. 收藏题目，再取消收藏。
-4. 进入刷题页提交答案，确认提交后才展示正确答案和解析。
-5. 查看错题本和答题历史详情。
-6. 创建 AI 模拟面试，获取面试详情，提交整场面试，查看 AI 历史。
+- [测试报告](docs/TEST_REPORT.md)
+- [交付说明](docs/DELIVERY.md)
 
-## 管理员测试流程
+## 常见问题
 
-1. 使用 `admin/admin123` 登录。
-2. 访问管理后台统计、用户列表和题库列表。
-3. 新增、编辑、删除题目。
-4. 查看收藏记录、错题记录、答题记录，并通过弹窗查看答题详情。
-5. 查看 AI 面试记录，并通过弹窗查看逐题点评详情。
-6. 使用普通用户访问 `/api/admin/**`，应返回统一 JSON 403。
+### 为什么显示 MOCK？
 
-## 已知限制
+通常是因为没有配置 `APP_AI_PROVIDER=deepseek`，或者 IDEA 没有读取到环境变量。请检查启动日志：
 
-- 项目使用 Maven Wrapper 3.3.2 + Maven 3.9.9；本机仍需要 JDK 17+。
-- 在 JDK 26 下运行测试时，已通过 Surefire 配置 `-Dnet.bytebuddy.experimental=true` 兼容 Mockito/Byte Buddy。
-- AI 能力当前为 Mock 规则生成和评分，不调用真实 DeepSeek 或 OpenAI API。
-- 管理端聚焦课程项目核心管理闭环，暂无复杂审计日志和批量导入导出。
+```text
+System final AI Provider = ...
+```
 
-## Swagger 测试步骤
+### 为什么需要 APP_AI_PROVIDER？
 
-1. 启动项目后访问 `http://localhost:8080/swagger-ui.html`。
-2. 调用 `POST /api/auth/login` 登录，测试管理员账号为 `admin/admin123`。
-3. 普通用户可先调用 `POST /api/auth/register` 注册，再登录获取 token。
-4. 点击 Swagger 右上角 Authorize，填写 `Bearer <token>`。
-5. 调用 `POST /api/answers/submit` 提交答案。
-6. 调用 `POST /api/favorites/{questionId}` 收藏题目。
-7. 调用 `GET /api/wrong-questions` 查看错题本。
-8. 调用 `GET /api/statistics/user/overview` 查看学习概览。
-9. 调用 `POST /api/ai/review-answer` 或 `POST /api/ai/generate-interview` 测试 AI Mock 能力。
-10. 使用管理员账号登录，重新 Authorize 为管理员 token。
-11. 调用 `GET /api/admin/users` 查询用户列表。
-12. 调用 `PUT /api/admin/users/{id}/status` 测试启用或禁用普通用户。
-13. 调用 `GET /api/admin/statistics/overview` 查看管理看板概览。
+`APP_AI_PROVIDER` 是为了让 IDEA、PowerShell、Docker 等环境都能清晰配置 AI Provider。系统也兼容 `AI_PROVIDER` 和 `-Dapp.ai.provider=deepseek`。
 
-## 后续开发计划
+### DeepSeek API Key 配了但没有调用？
 
-下一步建议围绕真实大模型接入、代码题沙箱判题、前端 E2E 测试和生产部署配置继续完善。
+请同时确认：
+
+- `APP_AI_PROVIDER=deepseek`
+- `DEEPSEEK_API_KEY` 不为空
+- 日志出现 `selectedService=DeepSeekAiService`
+- 日志出现 `DeepSeek request sending`
+
+### 为什么低质量回答分数很低？
+
+项目通过 `ScoreEngine` 对空回答、明显无效回答、极短回答、泛泛回答做封顶，防止 AI 模型给出安慰式高分。
+
+### PDF / 分享 / 成长分析的分数来自哪里？
+
+这些模块读取的是最终保存的 AI 面试结果。最终分数统一由 `ScoreEngine` 产出。
+
+## 文档入口
+
+- [项目交付说明](docs/DELIVERY.md)
+- [演示脚本](docs/DEMO_SCRIPT.md)
+- [API 概览](docs/API_OVERVIEW.md)
+- [测试报告](docs/TEST_REPORT.md)
+- [项目总结](docs/PROJECT_SUMMARY.md)
+- [面试讲解稿](docs/INTERVIEW_SCRIPT.md)
+- [简历描述模板](docs/RESUME_DESCRIPTION.md)
+
