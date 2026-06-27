@@ -335,4 +335,31 @@ docs: add final project checklist
 8. 查看成长分析
 9. 切换管理员后台
 10. 展示统计和记录管理
+## 一键健康检查脚本
 
+演示、答辩或提交前，可以在项目根目录运行：
+
+```powershell
+scripts\check-project.bat
+```
+
+脚本会依次检查：
+
+- 自动检测可用 JDK，优先使用有效 `JAVA_HOME`，否则尝试本机常见 JDK 路径
+- 必要项目文件是否存在
+- `docs` 交付文档是否齐全
+- 后端 `mvnw.cmd -DskipTests compile` 是否通过
+- 后端 `mvnw.cmd test` 是否通过
+- 前端 `npm.cmd run build` 是否通过
+- Git 工作区是否存在未提交内容
+- `target/`、`frontend/node_modules/`、`frontend/dist/` 是否存在并提醒确认 `.gitignore`
+
+如果全部通过，脚本会输出：
+
+```text
+PROJECT CHECK PASSED
+Backend compile: OK
+Backend tests: OK
+Frontend build: OK
+Docs: OK
+```

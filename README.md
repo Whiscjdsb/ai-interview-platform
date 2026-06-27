@@ -335,6 +335,14 @@ cd frontend
 npm.cmd run build
 ```
 
+演示前完整健康检查：
+
+```powershell
+scripts\check-project.bat
+```
+
+脚本会优先使用有效的 `JAVA_HOME`。如果系统 `JAVA_HOME` 无效，会自动尝试本机常见 JDK 路径，并只在脚本进程内临时设置 `JAVA_HOME` 和 `PATH`，不会修改系统环境变量。
+
 当前已知验证结果见：
 
 - [测试报告](docs/TEST_REPORT.md)
