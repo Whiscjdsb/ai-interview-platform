@@ -1,0 +1,260 @@
+:root {
+  --ai-color-primary: #2563eb;
+  --ai-color-primary-hover: #1d4ed8;
+  --ai-color-primary-active: #1e40af;
+  --ai-color-primary-soft: #eff6ff;
+  --ai-color-primary-subtle: #dbeafe;
+  --ai-color-accent: #7c3aed;
+  --ai-color-accent-soft: #f3e8ff;
+  --ai-color-success: #16a34a;
+  --ai-color-success-soft: #ecfdf5;
+  --ai-color-warning: #d97706;
+  --ai-color-warning-soft: #fff7ed;
+  --ai-color-danger: #dc2626;
+  --ai-color-danger-soft: #fef2f2;
+  --ai-color-info: #0891b2;
+  --ai-color-info-soft: #ecfeff;
+
+  --ai-text-primary: #102a43;
+  --ai-text-secondary: #486581;
+  --ai-text-muted: #62748e;
+  --ai-text-placeholder: #9fb3c8;
+  --ai-bg-page: #f4f7fb;
+  --ai-bg-page-soft: #f8fbff;
+  --ai-bg-card: #ffffff;
+  --ai-bg-card-muted: #f8fafc;
+  --ai-border: #d9e2ec;
+  --ai-border-soft: #e5edf5;
+
+  --ai-font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ai-font-size-xs: 12px;
+  --ai-font-size-sm: 13px;
+  --ai-font-size-base: 14px;
+  --ai-font-size-md: 16px;
+  --ai-font-size-lg: 18px;
+  --ai-font-size-xl: 22px;
+  --ai-font-size-2xl: 26px;
+  --ai-font-size-3xl: 32px;
+  --ai-line-height-tight: 1.25;
+  --ai-line-height-base: 1.65;
+
+  --ai-space-1: 8px;
+  --ai-space-2: 16px;
+  --ai-space-3: 24px;
+  --ai-space-4: 32px;
+
+  --ai-radius-xs: 8px;
+  --ai-radius-sm: 12px;
+  --ai-radius-md: 16px;
+  --ai-radius-lg: 20px;
+  --ai-radius-pill: 999px;
+  --ai-shadow-soft: 0 10px 26px rgba(15, 23, 42, 0.06);
+  --ai-shadow-card: 0 14px 34px rgba(15, 23, 42, 0.08);
+  --ai-shadow-hover: 0 18px 42px rgba(37, 99, 235, 0.14);
+  --ai-transition-fast: 0.18s ease;
+
+  --el-color-primary: var(--ai-color-primary);
+  --el-color-primary-light-3: #60a5fa;
+  --el-color-primary-light-5: #93c5fd;
+  --el-color-primary-light-7: #bfdbfe;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: var(--ai-color-primary-soft);
+  --el-color-primary-dark-2: var(--ai-color-primary-active);
+  --el-color-success: var(--ai-color-success);
+  --el-color-warning: var(--ai-color-warning);
+  --el-color-danger: var(--ai-color-danger);
+  --el-color-info: var(--ai-color-info);
+  --el-text-color-primary: var(--ai-text-primary);
+  --el-text-color-regular: var(--ai-text-secondary);
+  --el-text-color-secondary: var(--ai-text-muted);
+  --el-border-color: var(--ai-border);
+  --el-border-color-light: var(--ai-border-soft);
+  --el-border-radius-base: var(--ai-radius-sm);
+  --el-font-family: var(--ai-font-family);
+}
+
+body {
+  color: var(--ai-text-primary);
+  background: var(--ai-bg-page);
+  font-size: var(--ai-font-size-base);
+  line-height: var(--ai-line-height-base);
+}
+
+h1,
+h2,
+h3 {
+  color: var(--ai-text-primary);
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: var(--ai-font-size-2xl);
+  line-height: var(--ai-line-height-tight);
+  font-weight: 800;
+}
+
+h2 {
+  font-size: var(--ai-font-size-xl);
+  line-height: var(--ai-line-height-tight);
+  font-weight: 750;
+}
+
+h3 {
+  font-size: var(--ai-font-size-lg);
+  line-height: var(--ai-line-height-tight);
+  font-weight: 700;
+}
+
+.el-button {
+  border-radius: var(--ai-radius-sm);
+  font-weight: 650;
+  transition:
+    transform var(--ai-transition-fast),
+    box-shadow var(--ai-transition-fast),
+    background-color var(--ai-transition-fast),
+    border-color var(--ai-transition-fast);
+}
+
+.el-button:not(.is-disabled):hover {
+  transform: translateY(-1px);
+}
+
+.el-button:not(.is-disabled):active {
+  transform: translateY(0);
+}
+
+.el-button--primary {
+  border-color: var(--ai-color-primary);
+  background: linear-gradient(135deg, var(--ai-color-primary), var(--ai-color-accent));
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+}
+
+.el-button--primary:not(.is-disabled):hover {
+  border-color: var(--ai-color-primary-hover);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.24);
+}
+
+.el-button--danger:not(.is-disabled):hover {
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.16);
+}
+
+.el-button.is-plain:not(.el-button--primary, .el-button--danger, .el-button--success, .el-button--warning) {
+  background: var(--ai-bg-card);
+}
+
+.el-card,
+.panel,
+.auth-panel,
+.coming-soon {
+  border-radius: var(--ai-radius-md);
+  border-color: rgba(217, 226, 236, 0.9);
+  box-shadow: var(--ai-shadow-soft);
+}
+
+.el-card {
+  transition:
+    transform var(--ai-transition-fast),
+    box-shadow var(--ai-transition-fast),
+    border-color var(--ai-transition-fast);
+}
+
+.el-card:hover {
+  border-color: var(--ai-color-primary-subtle);
+}
+
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  border-radius: var(--ai-radius-sm);
+  box-shadow: 0 0 0 1px var(--ai-border-soft) inset;
+  transition:
+    box-shadow var(--ai-transition-fast),
+    background-color var(--ai-transition-fast);
+}
+
+.el-input__wrapper:hover,
+.el-textarea__inner:hover,
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--ai-color-primary-subtle) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus,
+.el-select__wrapper.is-focused {
+  box-shadow:
+    0 0 0 1px var(--ai-color-primary) inset,
+    0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.el-tag {
+  border-radius: var(--ai-radius-pill);
+  font-weight: 650;
+}
+
+.el-alert {
+  border-radius: var(--ai-radius-sm);
+  border: 1px solid transparent;
+}
+
+.el-alert--error {
+  border-color: #fecaca;
+  background: var(--ai-color-danger-soft);
+}
+
+.el-empty {
+  --el-empty-fill-color-0: #ffffff;
+  --el-empty-fill-color-1: var(--ai-bg-card-muted);
+  --el-empty-fill-color-2: #edf2f7;
+  --el-empty-fill-color-3: #d9e2ec;
+  padding: var(--ai-space-3) var(--ai-space-2);
+}
+
+.el-empty__description p {
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-sm);
+}
+
+.el-skeleton__item {
+  background:
+    linear-gradient(90deg, #edf2f7 25%, #f8fafc 37%, #edf2f7 63%);
+  background-size: 400% 100%;
+  border-radius: var(--ai-radius-sm);
+}
+
+.el-pagination {
+  --el-pagination-button-bg-color: transparent;
+  --el-pagination-hover-color: var(--ai-color-primary);
+  gap: 4px;
+}
+
+.el-pager li,
+.el-pagination button {
+  border-radius: var(--ai-radius-xs);
+}
+
+.el-dialog {
+  border-radius: var(--ai-radius-md);
+}
+
+.el-message {
+  border-radius: var(--ai-radius-sm);
+  box-shadow: var(--ai-shadow-card);
+}
+
+.ai-hover-lift {
+  transition:
+    transform var(--ai-transition-fast),
+    box-shadow var(--ai-transition-fast),
+    border-color var(--ai-transition-fast);
+}
+
+.ai-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ai-shadow-hover);
+}
+
+.ai-muted-text {
+  color: var(--ai-text-muted);
+  font-size: var(--ai-font-size-sm);
+}
