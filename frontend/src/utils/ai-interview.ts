@@ -21,13 +21,13 @@ export function interviewStatusText(status: Interview['status']) {
 }
 
 export function scoreColor(score: number) {
-  if (score >= 85) {
+  if (score >= 90) {
     return '#16a34a'
   }
   if (score >= 70) {
     return '#2563eb'
   }
-  if (score >= 60) {
+  if (score >= 40) {
     return '#d97706'
   }
   return '#dc2626'

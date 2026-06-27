@@ -13,6 +13,14 @@
 
     <section v-loading="loading" class="question-list-panel">
       <template v-if="questions.length">
+        <div class="list-toolbar">
+          <div>
+            <strong>题目列表</strong>
+            <span>共 {{ total }} 道题，当前第 {{ query.page }} 页</span>
+          </div>
+          <el-tag type="info" effect="plain">每页 {{ query.size }} 道</el-tag>
+        </div>
+
         <QuestionCard
           v-for="question in questions"
           :key="question.id"
@@ -128,16 +136,61 @@ function goPractice(id: number) {
 <style scoped>
 .question-list-panel {
   min-height: 320px;
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e5edf5;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+}
+
+.list-toolbar strong,
+.list-toolbar span {
+  display: block;
+}
+
+.list-toolbar strong {
+  color: #102a43;
+  font-size: 16px;
+}
+
+.list-toolbar span {
+  margin-top: 4px;
+  color: #62748e;
+  font-size: 13px;
 }
 
 .pagination-row {
   display: flex;
   justify-content: flex-end;
+  border-top: 1px solid #e5edf5;
   margin-top: 18px;
+  padding-top: 16px;
   overflow-x: auto;
 }
 
 .el-alert {
   margin-bottom: 16px;
+}
+
+@media (max-width: 760px) {
+  .question-list-panel {
+    padding: 12px;
+  }
+
+  .list-toolbar,
+  .pagination-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 </style>

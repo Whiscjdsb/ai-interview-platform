@@ -6,7 +6,7 @@
           <h1>{{ result.position }} 面试结果</h1>
           <p>{{ difficultyText(result.difficulty) }} · {{ result.modelName }} · {{ formatInterviewTime(result.createTime) }}</p>
         </div>
-        <div class="score-box" :style="{ color: scoreColor(displayScore) }">
+        <div class="score-box" :class="scoreBandClass(displayScore)" :style="{ color: scoreBandColor(displayScore) }">
           <strong>{{ displayScore }}</strong>
           <span>{{ displayLevel }}</span>
         </div>
@@ -20,7 +20,7 @@
           <el-progress
             type="dashboard"
             :percentage="displayScore"
-            :color="scoreColor(displayScore)"
+            :color="scoreBandColor(displayScore)"
             :width="150"
           />
           <p class="score-summary">{{ result.summary || fallbackSummary }}</p>
@@ -154,7 +154,7 @@ let radarChart: echarts.ECharts | null = null
 
 const structuredResult = computed(() => result.value?.structuredResult || null)
 const displayScore = computed(() => normalizeScore(structuredResult.value?.score ?? result.value?.totalScore ?? 0))
-const displayLevel = computed(() => result.value?.level || scoreLevel(displayScore.value))
+const displayLevel = computed(() => scoreBandText(displayScore.value) || result.value?.level || scoreLevel(displayScore.value))
 const fallbackSummary = computed(() => `本次面试得分为 ${displayScore.value} 分，建议结合逐题点评继续复盘。`)
 const rawResponse = computed(() => result.value?.rawResponse || '')
 const strengths = computed(() => safeList(structuredResult.value?.strengths, result.value?.advantages))
@@ -232,6 +232,38 @@ function normalizeScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(value || 0)))
 }
 
+function scoreBandColor(score: number) {
+  return scoreColor(normalizeScore(score))
+}
+
+function scoreBandText(score: number) {
+  const value = normalizeScore(score)
+  if (value >= 90) {
+    return '优秀'
+  }
+  if (value >= 70) {
+    return '良好'
+  }
+  if (value >= 40) {
+    return '中等'
+  }
+  return '较弱'
+}
+
+function scoreBandClass(score: number) {
+  const value = normalizeScore(score)
+  if (value >= 90) {
+    return 'score-band--excellent'
+  }
+  if (value >= 70) {
+    return 'score-band--good'
+  }
+  if (value >= 40) {
+    return 'score-band--medium'
+  }
+  return 'score-band--weak'
+}
+
 async function downloadPdf() {
   if (!result.value) {
     return
@@ -301,6 +333,10 @@ function toFrontendShareUrl(url: string) {
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 52%, #eef6ff 100%);
+  padding: 20px;
 }
 
 .result-header h1 {
@@ -316,6 +352,11 @@ function toFrontendShareUrl(url: string) {
 .score-box {
   min-width: 110px;
   text-align: right;
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px 18px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
 }
 
 .score-box strong {
@@ -327,7 +368,23 @@ function toFrontendShareUrl(url: string) {
 .score-box span {
   display: block;
   margin-top: 6px;
-  color: #62748e;
+  font-weight: 700;
+}
+
+.score-band--excellent {
+  border-color: #bbf7d0;
+}
+
+.score-band--good {
+  border-color: #bfdbfe;
+}
+
+.score-band--medium {
+  border-color: #fed7aa;
+}
+
+.score-band--weak {
+  border-color: #fecaca;
 }
 
 .result-layout {
@@ -382,6 +439,7 @@ function toFrontendShareUrl(url: string) {
   border-radius: 8px;
   padding: 16px;
   background: #ffffff;
+  min-height: 150px;
 }
 
 .analysis-section h3,
@@ -389,6 +447,15 @@ function toFrontendShareUrl(url: string) {
 .question-results h2,
 .question-result h3 {
   margin: 0;
+}
+
+.analysis-section h3 {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 5px 10px;
+  font-size: 15px;
 }
 
 .analysis-section ul {
@@ -444,6 +511,7 @@ function toFrontendShareUrl(url: string) {
   border-radius: 8px;
   background: #ffffff;
   padding: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
 .question-result + .question-result {
@@ -452,9 +520,42 @@ function toFrontendShareUrl(url: string) {
 
 .question-result__header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
+}
+
+.question-result__header :deep(.el-tag) {
+  border: 0;
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.question-score {
+  min-width: 68px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.question-score strong,
+.question-score span {
+  display: block;
+}
+
+.question-score strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.question-score span {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #62748e;
 }
 
 .question-result p {

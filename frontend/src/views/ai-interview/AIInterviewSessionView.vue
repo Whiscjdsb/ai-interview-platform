@@ -24,7 +24,7 @@
         <el-divider />
 
         <div class="session-grid">
-          <div>
+          <div class="session-main">
             <div class="question-box">
               <div class="question-meta">
                 <el-tag>第 {{ currentQuestion.questionNo }} 题 / 共 {{ questionCount }} 题</el-tag>
@@ -40,6 +40,7 @@
 
             <el-input
               v-model="currentAnswer"
+              class="answer-input"
               type="textarea"
               :rows="10"
               maxlength="5000"
@@ -59,6 +60,10 @@
             <div class="chat-panel__header">
               <strong>多轮追问</strong>
               <span>{{ conversationHistory.length }} 条对话</span>
+            </div>
+            <div v-if="followUpLoading" class="thinking-row">
+              <span class="thinking-dot" />
+              <span>AI 正在思考...</span>
             </div>
             <div v-if="conversationHistory.length" class="chat-list">
               <div
@@ -111,6 +116,7 @@ const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const followUpLoading = ref(false)
+const submitLoading = ref(false)
 const session = ref<StoredInterviewSession | null>(null)
 const currentQuestionIndex = ref(0)
 const currentAnswer = ref('')
@@ -255,7 +261,7 @@ async function generateFollowUp() {
 }
 
 async function submitAll() {
-  if (!session.value) {
+  if (!session.value || submitLoading.value) {
     return
   }
   try {
@@ -268,14 +274,21 @@ async function submitAll() {
     return
   }
 
-  const result = await submitInterview(session.value.interview.id, {
-    answers: answersToPayload(session.value.interview.questions, session.value.answers)
-  })
-  session.value.interview.status = 'SUBMITTED'
-  session.value.result = result
-  saveInterviewSession(session.value)
-  saveInterviewResult(result)
-  await router.push(`/ai-interview/result/${session.value.interview.id}`)
+  submitLoading.value = true
+  try {
+    const result = await submitInterview(session.value.interview.id, {
+      answers: answersToPayload(session.value.interview.questions, session.value.answers)
+    })
+    session.value.interview.status = 'SUBMITTED'
+    session.value.result = result
+    saveInterviewSession(session.value)
+    saveInterviewResult(result)
+    await router.push(`/ai-interview/result/${session.value.interview.id}`)
+  } catch (error) {
+    ElMessage.error(errorMessage(error, '提交面试失败'))
+  } finally {
+    submitLoading.value = false
+  }
 }
 
 function getQuestionHistory() {
@@ -332,8 +345,20 @@ function buildCombinedAnswer(draft: string) {
   gap: 18px;
 }
 
+.session-main {
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 18px;
+}
+
 .question-box {
   margin-bottom: 18px;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 .question-box h2 {
@@ -364,15 +389,26 @@ function buildCombinedAnswer(draft: string) {
   font-size: 13px;
 }
 
+.answer-input :deep(.el-textarea__inner) {
+  border-radius: 8px;
+  line-height: 1.7;
+}
+
 .session-actions {
   justify-content: flex-end;
   margin-top: 18px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  border-top: 1px solid #e5edf5;
+  background: rgba(248, 250, 252, 0.96);
+  padding-top: 14px;
 }
 
 .chat-panel {
   border: 1px solid #d9e2ec;
   border-radius: 8px;
-  background: #ffffff;
+  background: #f8fafc;
   padding: 14px;
   min-height: 320px;
 }
@@ -396,13 +432,37 @@ function buildCombinedAnswer(draft: string) {
   gap: 10px;
   max-height: 420px;
   overflow: auto;
-  padding-right: 4px;
+  padding: 4px 4px 4px 0;
+}
+
+.thinking-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  background: #fffbeb;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  color: #92400e;
+  font-size: 13px;
+}
+
+.thinking-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f59e0b;
+  animation: pulse-thinking 1s ease-in-out infinite;
 }
 
 .chat-bubble {
-  border-radius: 8px;
-  padding: 10px 12px;
+  width: fit-content;
+  max-width: 88%;
+  border-radius: 14px;
+  padding: 12px 14px;
   line-height: 1.6;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
 .chat-bubble span {
@@ -419,13 +479,30 @@ function buildCombinedAnswer(draft: string) {
 }
 
 .chat-bubble--ai {
+  align-self: flex-start;
+  border: 1px solid #bfdbfe;
   background: #eff6ff;
   color: #1e3a8a;
 }
 
 .chat-bubble--user {
+  align-self: flex-end;
+  border: 1px solid #bbf7d0;
   background: #f0fdf4;
   color: #166534;
+}
+
+@keyframes pulse-thinking {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 .follow-up-list {
